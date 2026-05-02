@@ -1,0 +1,30 @@
+services:
+  router:
+    build:
+      context: .
+      dockerfile: Dockerfile.router
+    ports:
+      - "8000:8000"
+    depends_on:
+      - classical-backend
+      - quantum-backend
+    environment:
+      - PYTHONUNBUFFERED=1
+
+  classical-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.classical
+    ports:
+      - "8001:8001"
+    environment:
+      - PYTHONUNBUFFERED=1
+
+  quantum-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.quantum
+    ports:
+      - "8002:8002"
+    environment:
+      - PYTHONUNBUFFERED=1
