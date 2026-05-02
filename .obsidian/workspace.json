@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "CentralizedHardwareContext(QandMicah).md",
+                "file": "README.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "CentralizedHardwareContext(QandMicah)"
+              "title": "README"
             }
           }
         ]
@@ -183,11 +183,16 @@
       "bases:Create new base": false
     }
   },
-  "active": "9a2a4a6554ef615f",
+  "active": "c72e7bce6a053e29",
   "lastOpenFiles": [
+    "Screenshot 2026-05-02 at 12.29.38 AM.png",
+    "UsefulExamples.md",
     "XTREMISChallenege.png",
+    "AICHATSSHAREABLE.md",
     "CentralizedHardwareContext(QandMicah).md",
     "README.md",
+    "Untitled Diagram.drawio",
+    "HighLevelSystem.drawio",
     "CentralizedHardwareContext(QandMicah).txt"
   ]
 }
