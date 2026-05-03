@@ -196,10 +196,16 @@ simulation_speed_multiplier = SIMULATION_SPEED_OPTIONS[simulation_speed_index]
 COMMAND_FILE = "quantum_commands.json"
 COMMAND_CHECK_INTERVAL_FRAMES = 30
 
-# Terminal telemetry test output for the quantum routing / decision system.
-# For now, this prints JSON directly in Terminal instead of writing a file.
-TELEMETRY_OUTPUT_MODE = "terminal"
+# Live telemetry output for the quantum routing / Mosquitto bridge system.
+# The simulation continuously overwrites this JSON file with the newest full
+# state snapshot. Your separate Eclipse Mosquitto publisher script can read
+# this file and publish it to another computer.
+TELEMETRY_OUTPUT_MODE = "json_file"
 BASE_TELEMETRY_SAMPLE_HZ = 10.0
+TELEMETRY_JSON_FILENAME = "satellite_sim_live_telemetry.json"
+TELEMETRY_JSON_PATH = os.path.join(os.path.expanduser("~/Desktop"), TELEMETRY_JSON_FILENAME)
+TELEMETRY_JSON_TEMP_PATH = TELEMETRY_JSON_PATH + ".tmp"
+last_telemetry_file_write_time = 0.0
 
 
 def effective_telemetry_sample_hz():
@@ -210,8 +216,42 @@ def telemetry_export_interval_frames():
     return max(1, int(round(rate_value / effective_telemetry_sample_hz())))
 
 
+def ensure_telemetry_output_folder():
+    folder = os.path.dirname(TELEMETRY_JSON_PATH)
+    if folder != "" and not os.path.exists(folder):
+        os.makedirs(folder, exist_ok=True)
+
+
+def write_live_telemetry_json(payload):
+    # Atomic write pattern:
+    # 1. write the complete JSON to a temporary file
+    # 2. replace the live file in one operation
+    # This keeps the Mosquitto publisher from reading half-written JSON.
+    global last_telemetry_file_write_time
+
+    ensure_telemetry_output_folder()
+
+    file_payload = dict(payload)
+    file_payload["telemetry_file"] = {
+        "path": TELEMETRY_JSON_PATH,
+        "updated_unix_time_s": float(time.time()),
+        "updated_utc_iso": datetime.now(timezone.utc).isoformat(),
+        "write_mode": "atomic_temp_file_replace",
+        "intended_sample_hz": float(effective_telemetry_sample_hz()),
+        "mosquitto_note": "Read this JSON file from a separate publisher script and publish it over MQTT."
+    }
+
+    with open(TELEMETRY_JSON_TEMP_PATH, "w") as f:
+        json.dump(file_payload, f, indent=2)
+        f.write("\n")
+
+    os.replace(TELEMETRY_JSON_TEMP_PATH, TELEMETRY_JSON_PATH)
+    last_telemetry_file_write_time = time.time()
+
+
 print("Telemetry output mode:", TELEMETRY_OUTPUT_MODE)
-print(f"Telemetry will print full JSON snapshots in this terminal at {effective_telemetry_sample_hz():.1f} Hz.")
+print(f"Telemetry JSON file: {TELEMETRY_JSON_PATH}")
+print(f"Telemetry will update that JSON file at {effective_telemetry_sample_hz():.1f} Hz.")
 
 # Demo timing target for the asteroid
 desired_visual_collision_time = 18.0
@@ -313,7 +353,7 @@ command_label = label(
 
 telemetry_label = label(
     pos=vector(-3.6, 2.40, 0),
-    text="Telemetry output: terminal test mode active, 10 Hz | speed 1x",
+    text=f"Telemetry JSON: {TELEMETRY_JSON_PATH} | {effective_telemetry_sample_hz():.1f} Hz",
     height=10,
     box=False,
     color=color.white
@@ -510,7 +550,7 @@ def set_control_status(text, label_color=color.white):
 def speed_status_text():
     return (
         f"speed {simulation_speed_multiplier}x | "
-        f"telemetry {effective_telemetry_sample_hz():.1f} Hz | "
+        f"telemetry JSON {effective_telemetry_sample_hz():.1f} Hz | "
         f"dt {dt:.1f} s"
     )
 
@@ -2307,7 +2347,24 @@ def export_telemetry(frame_count, visual_time, physical_time, satellites, astero
         debris_particles
     )
 
-    if TELEMETRY_OUTPUT_MODE == "terminal":
+    if TELEMETRY_OUTPUT_MODE == "json_file":
+        try:
+            write_live_telemetry_json(payload)
+            telemetry_label.text = (
+                f"Telemetry JSON: {TELEMETRY_JSON_FILENAME} @ {effective_telemetry_sample_hz():.1f} Hz | "
+                f"speed {simulation_speed_multiplier}x | "
+                f"{payload['counts']['active_satellites']} sats, "
+                f"{payload['counts']['active_asteroids']} asteroids, "
+                f"{payload['counts']['active_debris']} debris | "
+                f"{payload['utc_iso']}"
+            )
+            telemetry_label.color = color.white
+        except Exception as e:
+            telemetry_label.text = f"Telemetry JSON write error: {e}"
+            telemetry_label.color = color.red
+            print(f"Telemetry JSON write error: {e}")
+
+    elif TELEMETRY_OUTPUT_MODE == "terminal":
         terminal_payload = make_terminal_payload(payload)
         print("\n========== SPACE STATE TELEMETRY ==========")
         print(json.dumps(terminal_payload, indent=2))
