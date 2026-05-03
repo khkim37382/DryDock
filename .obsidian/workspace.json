@@ -25,18 +25,30 @@
             "id": "92acfcfd57179908",
             "type": "leaf",
             "state": {
+              "type": "image",
+              "state": {
+                "file": "How it works.png"
+              },
+              "icon": "lucide-image",
+              "title": "How it works"
+            }
+          },
+          {
+            "id": "a1cb4eb16cf8ed03",
+            "type": "leaf",
+            "state": {
               "type": "markdown",
               "state": {
-                "file": "Notes for Resources.md",
+                "file": "UsefulExamples.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Notes for Resources"
+              "title": "UsefulExamples"
             }
           }
         ],
-        "currentTab": 1
+        "currentTab": 2
       }
     ],
     "direction": "vertical"
@@ -198,10 +210,18 @@
       "bases:Create new base": false
     }
   },
-  "active": "92acfcfd57179908",
+  "active": "a1cb4eb16cf8ed03",
   "lastOpenFiles": [
+    "Sections to Improve.md",
+    "Screenshot 2026-05-02 at 12.29.38 AM.png",
     "README.md",
     "Notes for Resources.md",
+    "NewsSources.md",
+    "How it works.png",
+    "CentralizedHardwareContext(QandMicah).md",
+    "AICHATSSHAREABLE.md",
+    "XTREMISChallenege.png",
+    "UsefulExamples.md",
     "xtremis-drydock-main/challenge-2-quantum/src/router/models.py",
     "xtremis-drydock-main/challenge-2-quantum/src/router/main.py",
     "xtremis-drydock-main/challenge-2-quantum/src/router/decision_engine.py",
@@ -213,12 +233,6 @@
     "xtremis-drydock-main/challenge-2-quantum/src/classical_backend",
     "xtremis-drydock-main/challenge-2-quantum/examples/maxcut_qaoa_reference.py",
     "xtremis-drydock-main/challenge-2-quantum/README.md",
-    "xtremis-drydock-main/README.md",
-    "NewsSources.md",
-    "Screenshot 2026-05-02 at 12.29.38 AM.png",
-    "UsefulExamples.md",
-    "XTREMISChallenege.png",
-    "AICHATSSHAREABLE.md",
-    "CentralizedHardwareContext(QandMicah).md"
+    "xtremis-drydock-main/README.md"
   ]
 }
