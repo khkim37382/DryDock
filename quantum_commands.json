@@ -1,0 +1,15 @@
+{
+  "selected_satellite": "SAT-3",
+  "data_collection_target": {
+    "name": "Nashville target",
+    "lat_deg": 36.1627,
+    "lon_deg": -86.7816
+  },
+  "maneuvers": [
+    {
+      "satellite": "SAT-2",
+      "type": "radial_out",
+      "delta_v_mps": 0
+    }
+  ]
+}

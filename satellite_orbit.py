@@ -58,6 +58,14 @@ REQUESTED_LEO_SATELLITES = read_nonnegative_int("Number of LEO satellites", 2)
 REQUESTED_MEO_SATELLITES = read_nonnegative_int("Number of MEO satellites", 1)
 REQUESTED_HEO_SATELLITES = read_nonnegative_int("Number of HEO satellites", 1)
 
+print("\nAsteroid hazard setup")
+print("Enter how many asteroids you want in each orbit class.")
+print("Default is 1 LEO asteroid so the collision demo still happens.\n")
+
+REQUESTED_LEO_ASTEROIDS = read_nonnegative_int("Number of LEO asteroids", 1)
+REQUESTED_MEO_ASTEROIDS = read_nonnegative_int("Number of MEO asteroids", 0)
+REQUESTED_HEO_ASTEROIDS = read_nonnegative_int("Number of HEO asteroids", 0)
+
 if REQUESTED_LEO_SATELLITES + REQUESTED_MEO_SATELLITES + REQUESTED_HEO_SATELLITES == 0:
     print("You entered 0 total satellites, so the sim will create one default LEO satellite so the demo still runs.")
     REQUESTED_LEO_SATELLITES = 1
@@ -67,6 +75,13 @@ print(
     f"{REQUESTED_LEO_SATELLITES} LEO, "
     f"{REQUESTED_MEO_SATELLITES} MEO, "
     f"{REQUESTED_HEO_SATELLITES} HEO satellites.\n"
+)
+
+print(
+    f"Creating asteroid hazards: "
+    f"{REQUESTED_LEO_ASTEROIDS} LEO, "
+    f"{REQUESTED_MEO_ASTEROIDS} MEO, "
+    f"{REQUESTED_HEO_ASTEROIDS} HEO asteroids.\n"
 )
 
 # -----------------------------
@@ -288,7 +303,10 @@ def build_final_summary(frame_count_value, visual_time_value, physical_time_valu
     active_satellite_names = [sat["name"] for sat in satellites if sat["active"]]
     destroyed_satellite_names = [sat["name"] for sat in satellites if not sat["active"]]
     active_debris_count = count_active_debris()
-    active_asteroid_count = 1 if asteroid is not None and asteroid["active"] else 0
+    if "asteroids" in globals():
+        active_asteroid_count = sum(1 for ast in asteroids if ast["active"])
+    else:
+        active_asteroid_count = 1 if asteroid is not None and asteroid["active"] else 0
     active_hazard_count = active_asteroid_count + active_debris_count
 
     return {
@@ -927,64 +945,152 @@ def hide_satellite(sat):
 # -----------------------------
 # Asteroid
 # -----------------------------
-def create_physical_asteroid(target_sat, target_collision_visual_time):
-    # Put asteroid in the same orbital plane as SAT-2 but retrograde.
-    # This gives a physically valid orbit and keeps it visible.
-    sat_r = mag(target_sat["position_m"])
-    sat_speed = mag(target_sat["velocity_mps"])
-    omega_sat = sat_speed / sat_r
-
-    asteroid_altitude = altitude_m(target_sat["position_m"]) + 50000.0
-    asteroid_radius = R_EARTH + asteroid_altitude
-    asteroid_speed = circular_speed(asteroid_radius)
-    omega_ast = asteroid_speed / asteroid_radius
-
-    target_physical_time = target_collision_visual_time * rate_value * dt
-    separation_angle = (omega_sat + omega_ast) * target_physical_time
-    separation_deg = degrees(separation_angle % (2 * pi))
-
-    inclination_deg = 70
-    raan_deg = 45
-    sat_phase_deg = 35
-    asteroid_phase_deg = sat_phase_deg + separation_deg
-
-    position_m, velocity_mps = make_orbit_state(
-        altitude=asteroid_altitude,
-        inclination_deg=inclination_deg,
-        raan_deg=raan_deg,
-        phase_deg=asteroid_phase_deg,
-        prograde=False
-    )
-
+def create_asteroid_from_state(name, position_m, velocity_mps, orbit_class, orbit_description, asteroid_color=color.red):
     marker = sphere(
         pos=meters_to_scene(position_m),
         radius=0.075,
-        color=color.red,
+        color=asteroid_color,
         emissive=True,
         make_trail=True,
-        trail_color=color.red,
+        trail_color=asteroid_color,
         retain=600
     )
     marker.trail_radius = 0.006
 
     asteroid_label = label(
         pos=marker.pos + vector(0.14, 0.14, 0),
-        text="ASTEROID",
+        text=name,
         height=11,
         box=False,
-        color=color.red
+        color=asteroid_color
     )
 
     return {
-        "name": "ASTEROID",
+        "name": name,
         "position_m": position_m,
         "velocity_mps": velocity_mps,
         "marker": marker,
         "label": asteroid_label,
         "active": True,
         "mass_kg": 1000.0,
-        "physical_radius_m": 2.0
+        "physical_radius_m": 2.0,
+        "orbit_class": orbit_class,
+        "orbit_description": orbit_description
     }
+
+
+def create_physical_asteroid(target_sat, target_collision_visual_time, name="AST-1"):
+    # Guaranteed collision-course asteroid.
+    #
+    # Instead of giving the asteroid a random orbit, this places it on the same
+    # circular orbital plane/radius as the target satellite, but with the opposite
+    # tangential velocity. In ideal two-body gravity, the satellite and asteroid
+    # are on the same circle moving toward each other, so their paths must intersect.
+    # The starting angular separation is chosen so the impact happens later in the
+    # run instead of immediately.
+    #
+    # This is still a demo threat: real mission planning would use tracking data
+    # and orbit determination, but this is physically valid enough for a live
+    # collision demonstration.
+    target_position_m = target_sat["position_m"]
+    target_velocity_mps = target_sat["velocity_mps"]
+    target_radius_m = mag(target_position_m)
+
+    target_speed_mps = circular_speed(target_radius_m)
+    omega_rad_per_s = target_speed_mps / target_radius_m
+
+    target_physical_time = target_collision_visual_time * rate_value * BASE_DT
+    separation_angle = (2.0 * omega_rad_per_s * target_physical_time) % (2.0 * pi)
+
+    orbit_normal = cross(target_position_m, target_velocity_mps)
+    if mag(orbit_normal) == 0:
+        orbit_normal = vector(0, 0, 1)
+    else:
+        orbit_normal = norm(orbit_normal)
+
+    # Place the asteroid ahead of the satellite along the satellite's direction
+    # of motion, then give it the opposite velocity.
+    asteroid_position_m = rotate(
+        target_position_m,
+        angle=separation_angle,
+        axis=orbit_normal
+    )
+
+    prograde_dir_at_asteroid = cross(orbit_normal, norm(asteroid_position_m))
+    if mag(prograde_dir_at_asteroid) == 0:
+        prograde_dir_at_asteroid = perpendicular_velocity_dir(asteroid_position_m, target_velocity_mps)
+    else:
+        prograde_dir_at_asteroid = norm(prograde_dir_at_asteroid)
+
+    asteroid_velocity_mps = -prograde_dir_at_asteroid * target_speed_mps
+
+    asteroid = create_asteroid_from_state(
+        name=name,
+        position_m=asteroid_position_m,
+        velocity_mps=asteroid_velocity_mps,
+        orbit_class=target_sat.get("orbit_class", "LEO"),
+        orbit_description=(
+            f"guaranteed retrograde collision-course orbit targeting {target_sat['name']}; "
+            f"predicted impact in about {target_collision_visual_time:.1f} visual seconds"
+        ),
+        asteroid_color=color.red
+    )
+
+    asteroid["target_satellite"] = target_sat["name"]
+    asteroid["predicted_collision_visual_time_s"] = target_collision_visual_time
+    asteroid["predicted_collision_physical_time_s"] = target_physical_time
+    asteroid["guaranteed_collision_course"] = True
+
+    print(
+        f"{name} placed on guaranteed collision course with {target_sat['name']} "
+        f"in about {target_collision_visual_time:.1f} visual seconds "
+        f"({target_physical_time:.0f} physical seconds)."
+    )
+
+    return asteroid
+
+
+def create_circular_asteroid(name, altitude, inclination_deg, raan_deg, phase_deg, orbit_class, prograde=False):
+    position_m, velocity_mps = make_orbit_state(
+        altitude=altitude,
+        inclination_deg=inclination_deg,
+        raan_deg=raan_deg,
+        phase_deg=phase_deg,
+        prograde=prograde
+    )
+
+    return create_asteroid_from_state(
+        name=name,
+        position_m=position_m,
+        velocity_mps=velocity_mps,
+        orbit_class=orbit_class,
+        orbit_description=f"{orbit_class} circular asteroid orbit, altitude {altitude / 1000.0:.0f} km",
+        asteroid_color=color.red
+    )
+
+
+def create_heo_asteroid(name, perigee_altitude, apogee_altitude, inclination_deg, raan_deg, argument_of_perigee_deg, true_anomaly_deg, prograde=False):
+    position_m, velocity_mps = make_elliptical_orbit_state(
+        perigee_altitude=perigee_altitude,
+        apogee_altitude=apogee_altitude,
+        inclination_deg=inclination_deg,
+        raan_deg=raan_deg,
+        argument_of_perigee_deg=argument_of_perigee_deg,
+        true_anomaly_deg=true_anomaly_deg,
+        prograde=prograde
+    )
+
+    return create_asteroid_from_state(
+        name=name,
+        position_m=position_m,
+        velocity_mps=velocity_mps,
+        orbit_class="HEO",
+        orbit_description=(
+            f"HEO elliptical asteroid orbit, perigee {perigee_altitude / 1000.0:.0f} km, "
+            f"apogee {apogee_altitude / 1000.0:.0f} km"
+        ),
+        asteroid_color=color.red
+    )
 
 
 def update_asteroid(asteroid):
@@ -1391,7 +1497,7 @@ def handle_debris_debris_collisions():
 # -----------------------------
 # Telemetry output for quantum system
 # -----------------------------
-def build_telemetry_payload(frame_count, visual_time, physical_time, satellites, asteroid, debris_particles):
+def build_telemetry_payload(frame_count, visual_time, physical_time, satellites, asteroids, debris_particles):
     active_debris = [d for d in debris_particles if d["active"]]
 
     unix_time_s = time.time()
@@ -1428,7 +1534,7 @@ def build_telemetry_payload(frame_count, visual_time, physical_time, satellites,
         ))
 
     asteroid_states = []
-    if asteroid is not None:
+    for asteroid in asteroids:
         asteroid_states.append(object_state_dict(
             object_id=asteroid["name"],
             object_type="asteroid",
@@ -1439,7 +1545,11 @@ def build_telemetry_payload(frame_count, visual_time, physical_time, satellites,
             radius_m=asteroid.get("physical_radius_m"),
             selected_for_data=False,
             measurement_timestamp=measurement_timestamp,
-            extra={"collision_threat": bool(asteroid["active"])}
+            extra={
+                "collision_threat": bool(asteroid["active"]),
+                "orbit_class": asteroid.get("orbit_class", "unknown"),
+                "orbit_description": asteroid.get("orbit_description", "unknown")
+            }
         ))
 
     debris_states = []
@@ -1511,13 +1621,13 @@ def make_terminal_payload(payload):
     return terminal_payload
 
 
-def export_telemetry(frame_count, visual_time, physical_time, satellites, asteroid, debris_particles):
+def export_telemetry(frame_count, visual_time, physical_time, satellites, asteroids, debris_particles):
     payload = build_telemetry_payload(
         frame_count,
         visual_time,
         physical_time,
         satellites,
-        asteroid,
+        asteroids,
         debris_particles
     )
 
@@ -1530,6 +1640,7 @@ def export_telemetry(frame_count, visual_time, physical_time, satellites, astero
         telemetry_label.text = (
             f"Telemetry output: terminal {effective_telemetry_sample_hz():.1f} Hz | speed {simulation_speed_multiplier}x | "
             f"{payload['counts']['active_satellites']} sats, "
+            f"{payload['counts']['active_asteroids']} asteroids, "
             f"{payload['counts']['active_debris']} debris | "
             f"{payload['utc_iso']}"
         )
@@ -1662,12 +1773,87 @@ def build_requested_constellation():
     return built_satellites
 
 
-satellites = build_requested_constellation()
+def build_requested_asteroids(existing_satellites):
+    built_asteroids = []
+    asteroid_index = 1
 
-# Keep the asteroid demo aimed at a real satellite if at least one exists.
-# Prefer the second satellite so the first one often survives for comparison.
-asteroid_target_satellite = satellites[min(1, len(satellites) - 1)] if len(satellites) > 0 else None
-asteroid = create_physical_asteroid(asteroid_target_satellite, desired_visual_collision_time) if asteroid_target_satellite is not None else None
+    # Keep the first LEO asteroid aimed at a real satellite if possible so the demo still shows a collision.
+    asteroid_target_satellite = existing_satellites[min(1, len(existing_satellites) - 1)] if len(existing_satellites) > 0 else None
+
+    for i in range(REQUESTED_LEO_ASTEROIDS):
+        if i == 0 and asteroid_target_satellite is not None:
+            built_asteroids.append(create_physical_asteroid(
+                asteroid_target_satellite,
+                desired_visual_collision_time,
+                name=f"AST-{asteroid_index}"
+            ))
+        else:
+            altitude = LEO_ALTITUDES_M[i % len(LEO_ALTITUDES_M)] + 50000.0
+            inclination = [51.6, 63, 74, 97][i % 4]
+            raan = (20 + i * 360.0 / max(1, REQUESTED_LEO_ASTEROIDS)) % 360
+            phase = (45 + i * 123.0) % 360
+            draw_circular_orbit(altitude, color.gray(0.20), inclination_deg=inclination, raan_deg=raan)
+            built_asteroids.append(create_circular_asteroid(
+                f"AST-{asteroid_index}",
+                altitude,
+                inclination,
+                raan,
+                phase,
+                orbit_class="LEO",
+                prograde=False
+            ))
+
+        asteroid_index += 1
+
+    for i in range(REQUESTED_MEO_ASTEROIDS):
+        altitude = MEO_ALTITUDES_M[i % len(MEO_ALTITUDES_M)] + 100000.0
+        inclination = [55, 63, 70][i % 3]
+        raan = (55 + i * 360.0 / max(1, REQUESTED_MEO_ASTEROIDS)) % 360
+        phase = (120 + i * 129.0) % 360
+        draw_circular_orbit(altitude, color.gray(0.14), inclination_deg=inclination, raan_deg=raan)
+        built_asteroids.append(create_circular_asteroid(
+            f"AST-{asteroid_index}",
+            altitude,
+            inclination,
+            raan,
+            phase,
+            orbit_class="MEO",
+            prograde=False
+        ))
+        asteroid_index += 1
+
+    for i in range(REQUESTED_HEO_ASTEROIDS):
+        inclination = 63.4
+        raan = (95 + i * 360.0 / max(1, REQUESTED_HEO_ASTEROIDS)) % 360
+        argument_of_perigee = 270
+        true_anomaly = (60 + i * 151.0) % 360
+        draw_elliptical_orbit(
+            HEO_PERIGEE_ALTITUDE_M,
+            HEO_APOGEE_ALTITUDE_M,
+            color.gray(0.12),
+            inclination_deg=inclination,
+            raan_deg=raan,
+            argument_of_perigee_deg=argument_of_perigee
+        )
+        built_asteroids.append(create_heo_asteroid(
+            f"AST-{asteroid_index}",
+            HEO_PERIGEE_ALTITUDE_M,
+            HEO_APOGEE_ALTITUDE_M,
+            inclination,
+            raan,
+            argument_of_perigee,
+            true_anomaly,
+            prograde=False
+        ))
+        asteroid_index += 1
+
+    return built_asteroids
+
+
+satellites = build_requested_constellation()
+asteroids = build_requested_asteroids(satellites)
+# Backward-compatible alias for older summary/status checks.
+asteroid = asteroids[0] if len(asteroids) > 0 else None
 
 # -----------------------------
 # Collision settings
@@ -1692,7 +1878,7 @@ def active_satellite_count():
     return count
 
 # Print the first full telemetry snapshot immediately at startup.
-export_telemetry(0, 0.0, 0.0, satellites, asteroid, debris_particles)
+export_telemetry(0, 0.0, 0.0, satellites, asteroids, debris_particles)
 
 # -----------------------------
 # Main loop
@@ -1726,7 +1912,7 @@ while True:
             visual_time,
             physical_time,
             satellites,
-            asteroid,
+            asteroids,
             debris_particles
         )
 
@@ -1735,9 +1921,10 @@ while True:
         update_satellite_physics(sat)
         update_satellite_visuals(sat)
 
-    # Update asteroid
-    if asteroid is not None and asteroid["active"]:
-        update_asteroid(asteroid)
+    # Update asteroids
+    for asteroid in asteroids:
+        if asteroid["active"]:
+            update_asteroid(asteroid)
 
     # Update debris
     for debris in debris_particles:
@@ -1749,36 +1936,46 @@ while True:
         debris_particles = [d for d in debris_particles if d["active"]]
 
     # Asteroid collision checks
-    if asteroid is not None and asteroid["active"]:
+    if any(ast["active"] for ast in asteroids):
         warning_label.text = ""
 
-        for sat in satellites:
-            if not sat["active"]:
+        asteroid_collision_happened = False
+
+        for asteroid in asteroids:
+            if not asteroid["active"]:
                 continue
 
-            distance_m = mag(asteroid["position_m"] - sat["position_m"])
+            for sat in satellites:
+                if not sat["active"]:
+                    continue
 
-            if distance_m < warning_distance_m:
-                warning_label.text = "WARNING: CLOSE APPROACH DETECTED"
-                warning_label.pos = sat["marker"].pos + vector(0, 0.45, 0)
+                distance_m = mag(asteroid["position_m"] - sat["position_m"])
 
-            if distance_m < satellite_collision_distance_m:
-                collision_pos_m = (asteroid["position_m"] + sat["position_m"]) / 2
-                destroyed_velocity_mps = sat["velocity_mps"]
+                if distance_m < warning_distance_m:
+                    warning_label.text = f"WARNING: {asteroid['name']} CLOSE APPROACH"
+                    warning_label.pos = sat["marker"].pos + vector(0, 0.45, 0)
 
-                warning_label.text = f"COLLISION: {sat['name']} DESTROYED"
-                warning_label.pos = meters_to_scene(collision_pos_m) + vector(0, 0.55, 0)
+                if distance_m < satellite_collision_distance_m:
+                    collision_pos_m = (asteroid["position_m"] + sat["position_m"]) / 2
+                    destroyed_velocity_mps = sat["velocity_mps"]
 
-                hide_satellite(sat)
-                hide_object(asteroid)
+                    warning_label.text = f"COLLISION: {asteroid['name']} HIT {sat['name']}"
+                    warning_label.pos = meters_to_scene(collision_pos_m) + vector(0, 0.55, 0)
 
-                visuals, new_debris = create_breakup_event(
-                    collision_pos_m,
-                    destroyed_velocity_mps
-                )
+                    hide_satellite(sat)
+                    hide_object(asteroid)
 
-                active_visual_events.append(visuals)
-                debris_particles.extend(new_debris)
+                    visuals, new_debris = create_breakup_event(
+                        collision_pos_m,
+                        destroyed_velocity_mps
+                    )
+
+                    active_visual_events.append(visuals)
+                    debris_particles.extend(new_debris)
+                    asteroid_collision_happened = True
+                    break
+
+            if asteroid_collision_happened:
                 break
 
     # Debris to satellite chain reaction
@@ -1833,7 +2030,7 @@ while True:
     active_visual_events = updated_events
 
     # Status text
-    if (asteroid is None or not asteroid["active"]) and len(active_visual_events) == 0:
+    if all(not ast["active"] for ast in asteroids) and len(active_visual_events) == 0:
         if active_satellite_count() > 0 and len(debris_particles) > 0:
             if warning_label.text == "" or warning_label.text.startswith("COLLISION"):
                 warning_label.text = "ORBITING DEBRIS FIELD ACTIVE"

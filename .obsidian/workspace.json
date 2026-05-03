@@ -181,6 +181,7 @@
   },
   "active": "92acfcfd57179908",
   "lastOpenFiles": [
+    "quantum_commands.json",
     "satellite_orbit.py",
     "Notes for Resources.md",
     "Just In case",
@@ -201,7 +202,6 @@
     "xtremis-drydock-main/challenge-2-quantum/src/classical_backend/main.py",
     "xtremis-drydock-main/shared/docs/evaluation_rubric.pdf",
     "xtremis-drydock-main/challenge-2-quantum/src/router",
-    "xtremis-drydock-main/challenge-2-quantum/src/quantum_backend",
     "xtremis-drydock-main/challenge-2-quantum/README.md",
     "xtremis-drydock-main/README.md"
   ]
