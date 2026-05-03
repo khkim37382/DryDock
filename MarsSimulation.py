@@ -2,6 +2,7 @@ from vpython import *
 import json
 import os
 import time
+import math
 from datetime import datetime, timezone
 
 # ============================================================
@@ -140,6 +141,21 @@ EARTH_ROTATION_RATE = 7.2921159e-5 # rad/s
 MU_MARS = 4.282837e13              # m^3/s^2
 R_MARS = 3389500.0                 # m
 MARS_ROTATION_RATE = 7.0882181e-5  # rad/s
+
+# Higher-fidelity orbital physics options.
+# J2 models planetary oblateness, which slowly precesses real orbits.
+# Drag is only applied inside the upper atmosphere cutoff so high orbits and
+# the Earth-to-Mars transfer graphic are not unrealistically slowed.
+ENABLE_J2_PERTURBATION = True
+ENABLE_ATMOSPHERIC_DRAG = True
+J2_EARTH = 1.08262668e-3
+J2_MARS = 1.96045e-3
+DRAG_COEFFICIENT = 2.2
+EARTH_SURFACE_DENSITY_KG_M3 = 1.225
+MARS_SURFACE_DENSITY_KG_M3 = 0.020
+EARTH_SCALE_HEIGHT_M = 8500.0
+MARS_SCALE_HEIGHT_M = 11100.0
+MAX_DRAG_ALTITUDE_M = 800000.0
 
 # Heliocentric Earth-to-Mars transfer constants.
 # This creates a physically scaled Earth-Mars geometry using circular heliocentric
@@ -337,7 +353,7 @@ timer_label = label(
 
 physics_label = label(
     pos=vector(-3.6, 2.78, 0),
-    text="Physics: real Earth mu, real Earth radius, two-body gravity",
+    text="Physics: J2 gravity + upper-atmosphere drag enabled",
     height=10,
     box=False,
     color=color.cyan
@@ -665,8 +681,14 @@ def build_final_summary(frame_count_value, visual_time_value, physical_time_valu
             "base_physics_timestep_s": BASE_DT,
             "earth_mu_m3_s2": MU_EARTH,
             "earth_radius_m": R_EARTH,
+            "earth_j2": J2_EARTH,
             "mars_mu_m3_s2": MU_MARS,
             "mars_radius_m": R_MARS,
+            "mars_j2": J2_MARS,
+            "j2_perturbation_enabled": ENABLE_J2_PERTURBATION,
+            "atmospheric_drag_enabled": ENABLE_ATMOSPHERIC_DRAG,
+            "drag_coefficient": DRAG_COEFFICIENT,
+            "max_drag_altitude_m": MAX_DRAG_ALTITUDE_M,
             "earth_mars_distance_m": EARTH_MARS_DISTANCE_M,
             "earth_mars_distance_au": EARTH_MARS_DISTANCE_AU,
             "earth_mars_hohmann_transfer_time_days": TRANSFER_TIME_DAYS
@@ -764,12 +786,141 @@ def gravity_acceleration_from_body(relative_position_m, mu):
     return -mu * relative_position_m / (r ** 3)
 
 
-def gravity_acceleration(position_m):
-    return gravity_acceleration_from_body(position_m, MU_EARTH)
+def get_gravity_acc_j2(rel_pos, mu, radius, j2_coeff):
+    """Return point-mass gravity plus the J2 oblateness correction.
+
+    rel_pos is measured from the planet center to the object in meters.
+    The planet spin axis is assumed to be the scene z-axis, which matches the
+    current Earth/Mars visual setup.
+    """
+    r = mag(rel_pos)
+    if r == 0:
+        return vector(0, 0, 0)
+
+    acc_point = -mu * rel_pos / (r ** 3)
+
+    if not ENABLE_J2_PERTURBATION or j2_coeff == 0:
+        return acc_point
+
+    z = rel_pos.z
+    r2 = r ** 2
+    factor = (1.5 * j2_coeff * mu * radius ** 2) / (r ** 5)
+
+    j2_acc = vector(
+        rel_pos.x * (5 * (z ** 2 / r2) - 1),
+        rel_pos.y * (5 * (z ** 2 / r2) - 1),
+        rel_pos.z * (5 * (z ** 2 / r2) - 3)
+    )
+
+    return acc_point + factor * j2_acc
 
 
-def mars_gravity_acceleration(position_m):
-    return gravity_acceleration_from_body(position_m - MARS_POSITION_M, MU_MARS)
+def get_drag_acc(rel_pos, rel_vel, mass_kg, area_m2, body="Earth"):
+    """Return atmospheric-drag acceleration using a simple exponential model.
+
+    rel_pos is measured from the planet center. rel_vel should be the object's
+    velocity relative to the rotating atmosphere. Drag is disabled above
+    MAX_DRAG_ALTITUDE_M to avoid unrealistic drag in medium/high/interplanetary
+    space.
+    """
+    if not ENABLE_ATMOSPHERIC_DRAG:
+        return vector(0, 0, 0)
+
+    if mass_kg is None or mass_kg <= 0 or area_m2 is None or area_m2 <= 0:
+        return vector(0, 0, 0)
+
+    if body == "Mars":
+        planet_radius = R_MARS
+        rho0 = MARS_SURFACE_DENSITY_KG_M3
+        scale_height = MARS_SCALE_HEIGHT_M
+    else:
+        planet_radius = R_EARTH
+        rho0 = EARTH_SURFACE_DENSITY_KG_M3
+        scale_height = EARTH_SCALE_HEIGHT_M
+
+    altitude = mag(rel_pos) - planet_radius
+
+    if altitude < 0 or altitude > MAX_DRAG_ALTITUDE_M:
+        return vector(0, 0, 0)
+
+    rho = rho0 * math.exp(-altitude / scale_height)
+    v_mag = mag(rel_vel)
+
+    if v_mag == 0 or rho <= 0:
+        return vector(0, 0, 0)
+
+    drag_mag = (0.5 * rho * (v_mag ** 2) * DRAG_COEFFICIENT * area_m2) / mass_kg
+    return -drag_mag * norm(rel_vel)
+
+
+def central_body_constants(body):
+    if body == "Mars":
+        return {
+            "name": "Mars",
+            "mu": MU_MARS,
+            "radius": R_MARS,
+            "j2": J2_MARS,
+            "position": MARS_POSITION_M,
+            "rotation_rate": MARS_ROTATION_RATE
+        }
+
+    return {
+        "name": "Earth",
+        "mu": MU_EARTH,
+        "radius": R_EARTH,
+        "j2": J2_EARTH,
+        "position": vector(0, 0, 0),
+        "rotation_rate": EARTH_ROTATION_RATE
+    }
+
+
+def cross_section_area_from_radius(radius_m):
+    if radius_m is None or radius_m <= 0:
+        return None
+    return pi * radius_m ** 2
+
+
+def object_cross_section_area_m2(obj, default_radius_m=1.0):
+    if "drag_area_m2" in obj:
+        return obj["drag_area_m2"]
+
+    radius_m = obj.get("physical_radius_m", default_radius_m)
+    return cross_section_area_from_radius(radius_m)
+
+
+def physics_acceleration_for_object(position_m, velocity_mps, central_body="Earth", mass_kg=None, area_m2=None):
+    body = central_body_constants(central_body)
+    rel_pos = position_m - body["position"]
+
+    gravity = get_gravity_acc_j2(
+        rel_pos,
+        body["mu"],
+        body["radius"],
+        body["j2"]
+    )
+
+    # Approximate atmosphere co-rotation. This gives drag relative to the air,
+    # not just relative to the inertial scene.
+    atmosphere_velocity_mps = cross(vector(0, 0, body["rotation_rate"]), rel_pos)
+    relative_atmosphere_velocity_mps = velocity_mps - atmosphere_velocity_mps
+
+    drag = get_drag_acc(
+        rel_pos,
+        relative_atmosphere_velocity_mps,
+        mass_kg,
+        area_m2,
+        body=body["name"]
+    )
+
+    return gravity + drag
+
+
+def gravity_acceleration(position_m, velocity_mps=vector(0, 0, 0), mass_kg=None, area_m2=None):
+    return physics_acceleration_for_object(position_m, velocity_mps, "Earth", mass_kg, area_m2)
+
+
+def mars_gravity_acceleration(position_m, velocity_mps=vector(0, 0, 0), mass_kg=None, area_m2=None):
+    return physics_acceleration_for_object(position_m, velocity_mps, "Mars", mass_kg, area_m2)
 
 
 def altitude_m(position_m, central_body_position_m=vector(0, 0, 0), central_body_radius_m=R_EARTH):
@@ -1401,16 +1552,21 @@ def update_satellite_physics(sat):
 
     central_body = sat.get("central_body", "Earth")
 
-    if central_body == "Mars":
-        sat["velocity_mps"] += mars_gravity_acceleration(sat["position_m"]) * dt
-        sat["position_m"] += sat["velocity_mps"] * dt
+    area_m2 = object_cross_section_area_m2(sat, default_radius_m=1.5)
 
+    sat["velocity_mps"] += physics_acceleration_for_object(
+        sat["position_m"],
+        sat["velocity_mps"],
+        central_body,
+        sat.get("mass_kg", 500.0),
+        area_m2
+    ) * dt
+    sat["position_m"] += sat["velocity_mps"] * dt
+
+    if central_body == "Mars":
         if mag(sat["position_m"] - MARS_POSITION_M) <= R_MARS:
             hide_satellite(sat)
     else:
-        sat["velocity_mps"] += gravity_acceleration(sat["position_m"]) * dt
-        sat["position_m"] += sat["velocity_mps"] * dt
-
         if mag(sat["position_m"]) <= R_EARTH:
             hide_satellite(sat)
 
@@ -1706,17 +1862,22 @@ def update_asteroid(asteroid):
 
     central_body = asteroid.get("central_body", "Earth")
 
-    if central_body == "Mars":
-        asteroid["velocity_mps"] += mars_gravity_acceleration(asteroid["position_m"]) * dt
-        asteroid["position_m"] += asteroid["velocity_mps"] * dt
+    area_m2 = object_cross_section_area_m2(asteroid, default_radius_m=2.0)
 
+    asteroid["velocity_mps"] += physics_acceleration_for_object(
+        asteroid["position_m"],
+        asteroid["velocity_mps"],
+        central_body,
+        asteroid.get("mass_kg", 1000.0),
+        area_m2
+    ) * dt
+    asteroid["position_m"] += asteroid["velocity_mps"] * dt
+
+    if central_body == "Mars":
         if mag(asteroid["position_m"] - MARS_POSITION_M) <= R_MARS:
             hide_object(asteroid)
             return
     else:
-        asteroid["velocity_mps"] += gravity_acceleration(asteroid["position_m"]) * dt
-        asteroid["position_m"] += asteroid["velocity_mps"] * dt
-
         if mag(asteroid["position_m"]) <= R_EARTH:
             hide_object(asteroid)
             return
@@ -1887,6 +2048,7 @@ def create_breakup_event(position_m, base_velocity_mps):
             "life": 12000,
             "can_collide_after": 8,
             "mass_kg": mass_kg,
+            "physical_radius_m": 0.03 + min(0.20, 0.025 * sqrt(mass_kg)),
             "central_body": debris_central_body,
             "recent_collision_cooldown": 0
         })
@@ -1925,10 +2087,15 @@ def update_debris_particle(debris):
 
     central_body = debris.get("central_body", "Earth")
 
-    if central_body == "Mars":
-        debris["velocity_mps"] += mars_gravity_acceleration(debris["position_m"]) * dt
-    else:
-        debris["velocity_mps"] += gravity_acceleration(debris["position_m"]) * dt
+    area_m2 = object_cross_section_area_m2(debris, default_radius_m=0.08)
+
+    debris["velocity_mps"] += physics_acceleration_for_object(
+        debris["position_m"],
+        debris["velocity_mps"],
+        central_body,
+        debris.get("mass_kg", 1.0),
+        area_m2
+    ) * dt
 
     debris["position_m"] += debris["velocity_mps"] * dt
     debris["marker"].pos = meters_to_scene(debris["position_m"])
@@ -2007,6 +2174,7 @@ def create_secondary_debris(position_m, center_velocity_mps, relative_speed_mps,
             "life": 8000,
             "can_collide_after": 10,
             "mass_kg": mass_kg,
+            "physical_radius_m": 0.03 + min(0.20, 0.025 * sqrt(mass_kg)),
             "central_body": debris_central_body,
             "recent_collision_cooldown": 20
         })
@@ -2301,8 +2469,14 @@ def build_telemetry_payload(frame_count, visual_time, physical_time, satellites,
         "constants": {
             "earth_mu_m3_s2": MU_EARTH,
             "earth_radius_m": R_EARTH,
+            "earth_j2": J2_EARTH,
             "mars_mu_m3_s2": MU_MARS,
             "mars_radius_m": R_MARS,
+            "mars_j2": J2_MARS,
+            "j2_perturbation_enabled": ENABLE_J2_PERTURBATION,
+            "atmospheric_drag_enabled": ENABLE_ATMOSPHERIC_DRAG,
+            "drag_coefficient": DRAG_COEFFICIENT,
+            "max_drag_altitude_m": MAX_DRAG_ALTITUDE_M,
             "earth_mars_distance_m": EARTH_MARS_DISTANCE_M,
             "earth_mars_distance_au": EARTH_MARS_DISTANCE_AU,
             "earth_mars_hohmann_transfer_time_days": TRANSFER_TIME_DAYS,
