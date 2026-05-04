@@ -1,0 +1,1208 @@
+{
+    "schema": "drydock.simulation_output_json_master_documentation.v2",
+    "document_purpose": "Reference/training schema for every major JSON object that can appear in telemetry snapshots from the Earth + Sun + Moon dataset-backed simulation with named mass-conserved fragments and ground network/TDRS telemetry.",
+    "simulation_file_family": "earth_sun_moon_dataset_backed_simulation_with_ground_network_and_fragments.py",
+    "updated_for_features": {
+        "dataset_backed_satellites": true,
+        "dataset_backed_debris_hazards": true,
+        "generated_fragments_have_unique_ids": true,
+        "generated_fragment_masses_are_conserved_per_collision_event": true,
+        "debris_debris_collision_layer_enabled": true,
+        "ground_network_and_tdrs_telemetry_enabled": true,
+        "moon_and_sun_third_body_gravity": true,
+        "tcad_sensor_degradation": true,
+        "passive_rf_detection": true,
+        "radiation_environment": true,
+        "solar_power_thermal_camera_sensor_fusion": true
+    },
+    "notes_for_model_training": [
+        "This is a schema/reference document, not one exact telemetry frame.",
+        "Fields shown as example values may be null, empty arrays, or omitted if the relevant object/event has not occurred yet.",
+        "Generated debris fragments appear in debris[] and hazards[]. Dataset-backed debris hazards appear in asteroids[] and hazards[].",
+        "The variable name asteroids is legacy; when dataset_backed_debris_hazard is true, those objects are real catalog debris hazards from the debris JSON dataset.",
+        "All position_m_eci and velocity_mps_eci values are Earth-centered inertial demo-frame vectors unless otherwise noted.",
+        "Visual scene sizes are exaggerated; physical_radius_m and drag_area_m2 are the physics values.",
+        "Ground network/TDRS markers are visual/telemetry/config support only and do not replace dataset-backed satellites or passive RF telemetry."
+    ],
+    "top_level_telemetry_snapshot": {
+        "schema": "satellite_simulation.telemetry.v2.earth_sun_sensor_fusion",
+        "frame": 1234,
+        "measurement_timestamp": {
+            "unix_time_s": 1770000000.123,
+            "utc_iso": "2026-05-04T21:30:00.123456+00:00",
+            "simulation_visual_time_s": 10.2833,
+            "simulation_physical_time_s": 615.0,
+            "frame": 1234,
+            "sample_hz": 10.0,
+            "base_sample_hz": 10.0,
+            "speed_multiplier": 1.0
+        },
+        "utc_iso": "2026-05-04T21:30:00.123456+00:00",
+        "unix_time_s": 1770000000.123,
+        "visual_time_s": 10.2833,
+        "physical_time_s": 615.0,
+        "mars_removed": true,
+        "dataset_backed_characters": {
+            "enabled": true,
+            "satellite_dataset_path": "celestrak_ucs_orbit_dataset.json",
+            "debris_dataset_path": "celestrak_debris_dataset_with_estimated_masses.json",
+            "satellite_ids_match_json_object_id": true,
+            "debris_hazard_ids_match_json_object_id": true,
+            "catalog_names_match_json_name_field": true,
+            "generated_fragments_have_unique_ids": true,
+            "generated_fragment_masses_are_conserved_per_collision_event": true,
+            "debris_debris_collision_layer_enabled": true
+        },
+        "units": {
+            "position": "meters, Earth-centered inertial demo frame",
+            "velocity": "meters per second",
+            "mass": "kilograms",
+            "radius": "meters",
+            "time": "seconds",
+            "timestamp": "UTC ISO-8601 and Unix seconds"
+        },
+        "constants": "see constants block schema below",
+        "counts": "see counts block schema below",
+        "satellites": [
+            "satellite_state_object"
+        ],
+        "spacecraft": [],
+        "asteroids": [
+            "dataset_backed_debris_hazard_or_legacy_asteroid_object"
+        ],
+        "debris": [
+            "generated_debris_fragment_object"
+        ],
+        "hazards": [
+            "all active/known hazards = asteroids[] + debris[]"
+        ],
+        "ground_network": "ground_network_object",
+        "active_imaging_target": "active_imaging_target_object",
+        "recent_collision_events": [
+            "collision_event_object"
+        ],
+        "solar_environment": "solar_environment_object",
+        "lunar_environment": "lunar_environment_object",
+        "environment_model": "environment_model_object",
+        "radiation_environment": "radiation_environment_object",
+        "radiation_effects": "alias/same shape as radiation_environment",
+        "radiation_alerts": [
+            "radiation_alert_object"
+        ],
+        "radiation_events": [
+            "radiation_event_object"
+        ],
+        "passive_rf": "passive_rf_object",
+        "passive_rf_detections": [
+            "passive_rf_detection_object"
+        ],
+        "decision_request": "external_decision_request_object",
+        "telemetry_file": "present only in written MQTT outbox snapshot files"
+    },
+    "constants_block": {
+        "earth_mu_m3_s2": 398600441800000.0,
+        "earth_radius_m": 6371008.4,
+        "earth_j2": 0.00108262668,
+        "j2_perturbation_enabled": true,
+        "atmospheric_drag_enabled": true,
+        "drag_coefficient": 2.2,
+        "max_drag_altitude_m": 800000.0,
+        "sun_true_radius_m": 695700000.0,
+        "sun_scene_radius_earth_radii": 109.2,
+        "earth_sun_distance_m": 149597870700.0,
+        "solar_constant_w_m2_at_1au": 1361.0,
+        "earth_rotation_rate_rad_s": 7.2921159e-05,
+        "earth_orbital_speed_mps": 29784.69,
+        "earth_orbital_angular_rate_rad_s": 1.99098e-07,
+        "moon_mu_m3_s2": 4904869500000.0,
+        "moon_radius_m": 1737400.0,
+        "moon_semi_major_axis_m": 384400000.0,
+        "moon_orbital_period_s": 2360591.5,
+        "moon_orbital_angular_rate_rad_s": 2.6617e-06,
+        "solar_third_body_gravity_enabled": true,
+        "lunar_third_body_gravity_enabled": true,
+        "time_step_s": 5.0,
+        "base_time_step_s": 5.0,
+        "speed_multiplier": 1,
+        "passive_rf_enabled": true,
+        "rf_model_type": "maxwell_derived_far_field_link_budget",
+        "rf_maxwell_based": true,
+        "rf_model_note": "Maxwell-derived far-field approximation: c, wavelength, free-space path loss, Doppler shift, antenna gain, noise floor, and SNR. This is not a full FDTD/Maxwell grid solver.",
+        "rf_frequency_hz": 2200000000.0,
+        "rf_wavelength_m": 0.1362692990909091,
+        "radiation_model_enabled": true,
+        "radiation_model_type": "earth_orbit_space_weather_and_radiation_belt_model",
+        "solar_sensor_model_enabled": true,
+        "camera_sensor_model_enabled": true,
+        "camera_continuous_degradation_enabled": true,
+        "tcad_lookup_enabled": true,
+        "tcad_runtime_import_available": true,
+        "tcad_lookup_table_path": "/Users/kyuhyunkim/DryDock/tcad/tcad_lookup_table.json",
+        "tcad_lookup_loaded": true,
+        "tcad_lookup_status": "loaded or fallback/off",
+        "router_layer_included": false
+    },
+    "counts_block": {
+        "active_satellites": 4,
+        "active_asteroids": 1,
+        "active_debris": 45,
+        "active_generated_fragments": 45,
+        "recent_collision_events_logged": 1,
+        "total_hazards": 46,
+        "passive_rf_detections": 3,
+        "critical_rf_detections": 0,
+        "high_rf_detections": 1,
+        "radiation_monitored_objects": 50,
+        "high_radiation_risk_objects": 0,
+        "critical_radiation_risk_objects": 0,
+        "solar_storm_active": false
+    },
+    "satellite_state_object": {
+        "id": "NORAD-20580",
+        "type": "satellite",
+        "active": true,
+        "selected_for_data": false,
+        "position_m_eci": {
+            "x": 6871000.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "velocity_mps_eci": {
+            "x": 0.0,
+            "y": 7612.0,
+            "z": 0.0
+        },
+        "speed_mps": 7612.0,
+        "distance_from_earth_center_m": 6871000.0,
+        "altitude_m": 499991.6,
+        "altitude_km": 499.9916,
+        "specific_orbital_energy_j_per_kg": -29000000.0,
+        "central_body": "Earth",
+        "measurement_timestamp": "measurement_timestamp_object",
+        "mass_kg": 11110.0,
+        "physical_radius_m": 1.5,
+        "can_maneuver": true,
+        "destroyed": false,
+        "name": "HST",
+        "catalog_name": "HST",
+        "json_object_id": "NORAD-20580",
+        "norad_cat_id": 20580,
+        "mass_source": "ucs_or_public_reference_or_engineering_estimate",
+        "mass_confidence": "high|medium|low|simulation_conserved",
+        "orbit_elements": {
+            "mean_motion_rev_per_day": 15.0,
+            "eccentricity": 0.0003,
+            "inclination_deg": 28.5,
+            "raan_deg": 12.3,
+            "argument_of_perigee_deg": 85.0,
+            "mean_anomaly_deg": 210.0,
+            "estimated_semimajor_axis_km": 6900.0
+        },
+        "raw_celestrak_gp": {},
+        "ucs_metadata": {},
+        "purpose": "Earth Observation|Communications|Navigation|Science|unknown",
+        "users": "Civil|Commercial|Government|Military|unknown",
+        "operator_owner": "operator string or null",
+        "country_of_operator_owner": "country string or null",
+        "orbit_class": "LEO|MEO|GEO|HEO|UNKNOWN",
+        "orbit_description": "dataset-backed CelesTrak orbit",
+        "environment_vectors": "environment_vectors_object",
+        "sunlight_state": "sunlight_state_object",
+        "attitude_state": "attitude_state_object",
+        "solar_panel_system": "solar_panel_system_object",
+        "voltage_sensors": "voltage_sensors_object",
+        "power_system": "power_system_object",
+        "thermal_profile": "thermal_profile_object",
+        "communication_link": "communication_link_object",
+        "camera_sensor": "camera_sensor_object",
+        "tcad_sensor_degradation": "tcad_sensor_degradation_map",
+        "imaging_target_geometry": "imaging_target_geometry_object",
+        "distance_to_imaging_target_m": 1234567.0,
+        "radiation": "radiation_exposure_object",
+        "sensor_fusion_state": "sensor_fusion_state_object",
+        "sensor_confidence_scores": "sensor_confidence_scores_object"
+    },
+    "dataset_backed_debris_hazard_or_legacy_asteroid_object": {
+        "id": "NORAD-33757",
+        "type": "debris",
+        "active": true,
+        "selected_for_data": false,
+        "position_m_eci": {
+            "x": 7000000.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "velocity_mps_eci": {
+            "x": 0.0,
+            "y": -7500.0,
+            "z": 0.0
+        },
+        "speed_mps": 7500.0,
+        "distance_from_earth_center_m": 7000000.0,
+        "altitude_m": 628991.6,
+        "altitude_km": 628.9916,
+        "specific_orbital_energy_j_per_kg": -28000000.0,
+        "central_body": "Earth",
+        "measurement_timestamp": "measurement_timestamp_object",
+        "mass_kg": 12.5,
+        "physical_radius_m": 0.15,
+        "collision_threat": true,
+        "name": "COSMOS 2251 DEB",
+        "catalog_name": "COSMOS 2251 DEB",
+        "json_object_id": "NORAD-33757",
+        "norad_cat_id": 33757,
+        "dataset_backed_debris_hazard": true,
+        "mass_source": "estimated_from_debris_model_or_dataset",
+        "mass_confidence": "low|medium|high",
+        "mass_estimation_method": "area_to_mass_or_family_estimate",
+        "estimated_area_to_mass_m2_per_kg": 0.03,
+        "estimated_cross_section_area_m2": 0.04,
+        "orbit_elements": {},
+        "raw_celestrak_gp": {},
+        "orbit_class": "LEO|MEO|GEO|HEO|UNKNOWN",
+        "orbit_description": "dataset-backed debris orbit or forced collision demo path",
+        "radiation": "radiation_exposure_object"
+    },
+    "generated_debris_fragment_object": {
+        "id": "NORAD-20580-SAT-HIT-00001-FRAG-001",
+        "type": "debris",
+        "active": true,
+        "selected_for_data": false,
+        "position_m_eci": {
+            "x": 7001000.0,
+            "y": 2000.0,
+            "z": -1000.0
+        },
+        "velocity_mps_eci": {
+            "x": 12.0,
+            "y": 7520.0,
+            "z": -40.0
+        },
+        "speed_mps": 7520.2,
+        "distance_from_earth_center_m": 7001000.0,
+        "altitude_m": 629991.6,
+        "altitude_km": 629.9916,
+        "specific_orbital_energy_j_per_kg": -28000000.0,
+        "central_body": "Earth",
+        "measurement_timestamp": "measurement_timestamp_object",
+        "mass_kg": 34.25,
+        "physical_radius_m": 0.1447,
+        "name": "HST SAT-HIT-00001 FRAGMENT 001",
+        "catalog_name": "HST SAT-HIT-00001 FRAGMENT 001",
+        "json_object_id": "NORAD-20580-SAT-HIT-00001-FRAG-001",
+        "norad_cat_id": null,
+        "age_frames": 25,
+        "life_frames_remaining": 11975,
+        "recent_collision_cooldown_frames": 0,
+        "generated_fragment": true,
+        "fragment_event_id": "SAT-HIT-00001",
+        "fragment_sequence_number": 1,
+        "parent_object_id": "NORAD-20580",
+        "parent_name": "HST",
+        "parent_object_ids": [
+            "NORAD-20580",
+            "NORAD-33757"
+        ],
+        "parent_names": [
+            "HST",
+            "COSMOS 2251 DEB"
+        ],
+        "created_by_collision_type": "satellite_or_object_breakup|debris_debris_fragmentation",
+        "created_at_physical_time_s": 90.0,
+        "created_at_frame": 1080,
+        "mass_source": "mass_conserved_from_collision_parents",
+        "mass_confidence": "simulation_conserved",
+        "drag_area_m2": 0.0658,
+        "visual_scale_note": "VPython marker size is exaggerated for visibility; physical_radius_m and drag_area_m2 are used for physics.",
+        "radiation": "radiation_exposure_object"
+    },
+    "collision_event_object": {
+        "event_id": "SAT-HIT-00001|DEBRIS-DEBRIS-00002|DEBRIS-DEFLECT-00003",
+        "event_type": "mass_conserved_breakup|debris_debris_mass_conserved_fragmentation|debris_debris_deflection",
+        "created_at_physical_time_s": 90.0,
+        "created_at_frame": 1080,
+        "parent_object_ids": [
+            "NORAD-20580",
+            "NORAD-33757"
+        ],
+        "parent_names": [
+            "HST",
+            "COSMOS 2251 DEB"
+        ],
+        "object_ids": [
+            "used for deflection events"
+        ],
+        "object_names": [
+            "used for deflection events"
+        ],
+        "relative_speed_mps": 14000.0,
+        "total_parent_mass_kg": 11122.5,
+        "generated_fragment_count": 45,
+        "generated_fragment_mass_sum_kg": 11122.5,
+        "mass_conservation_error_kg": 0.0,
+        "energy_per_smaller_mass_j_per_kg": 98000000.0
+    },
+    "ground_network_object": {
+        "schema": "satellite_simulation.ground_network.v1",
+        "enabled": true,
+        "description": "Visual and telemetry support for ground stations and visual TDRS relay markers. Does not change orbital physics, collision physics, TCAD, passive RF, or dataset loading.",
+        "earth_rotation_angle_rad": 0.0448,
+        "earth_rotation_angle_deg": 2.567,
+        "ground_stations": [
+            {
+                "name": "White Sands NM, USA",
+                "lat_deg": 32.5,
+                "lon_deg_fixed_earth": -106.6,
+                "lon_deg_current_eci": -104.033,
+                "position_scene_units": {
+                    "x": -0.207,
+                    "y": -0.847,
+                    "z": 0.554
+                },
+                "position_m_eci": {
+                    "x": -1319000.0,
+                    "y": -5397000.0,
+                    "z": 3529000.0
+                },
+                "central_body": "Earth",
+                "surface_offset_scene_radius": 1.032,
+                "marker_color": "cyan"
+            }
+        ],
+        "tdrs_visual_relays": [
+            {
+                "name": "TDRS-East 41\u00b0W GEO",
+                "lon_deg_fixed_earth": -41.0,
+                "lon_deg_current_eci": -38.433,
+                "altitude_m": 35786000.0,
+                "orbit": "geostationary_visual_relay_marker",
+                "position_scene_units": {
+                    "x": 5.18,
+                    "y": -4.1,
+                    "z": 0.0
+                },
+                "position_m_eci": {
+                    "x": 33000000.0,
+                    "y": -26100000.0,
+                    "z": 0.0
+                },
+                "central_body": "Earth",
+                "marker_color": "gold"
+            }
+        ],
+        "geo_belt": {
+            "enabled": true,
+            "altitude_m": 35786000.0,
+            "radius_m": 42157008.4,
+            "radius_scene_units": 6.617,
+            "label": "GEO belt | TDRS relays"
+        },
+        "counts": {
+            "ground_stations": 6,
+            "tdrs_visual_relays": 3
+        },
+        "config_export": {
+            "path": "ground_network_config.json",
+            "schema": "ground_network.config.v1",
+            "written_at_startup": true
+        },
+        "external_dispatcher_note": "C++ or external dispatcher can use this for line-of-sight/contact geometry. Python simulation does not route messages internally."
+    },
+    "ground_network_config_json_file": {
+        "schema": "ground_network.config.v1",
+        "note": "Static ground station and TDRS relay config for dispatcher/LOS geometry.",
+        "speed_of_light_mps": 299792458.0,
+        "earth_radius_m": 6371008.4,
+        "geo_altitude_m": 35786000.0,
+        "ground_stations": [
+            {
+                "name": "White Sands NM, USA",
+                "lat_deg": 32.5,
+                "lon_deg": -106.6
+            },
+            {
+                "name": "Guam USA",
+                "lat_deg": 13.5,
+                "lon_deg": 144.8
+            },
+            {
+                "name": "Kiruna Sweden",
+                "lat_deg": 67.8,
+                "lon_deg": 20.2
+            },
+            {
+                "name": "Santiago Chile",
+                "lat_deg": -33.4,
+                "lon_deg": -70.6
+            },
+            {
+                "name": "Dongara Australia",
+                "lat_deg": -29.2,
+                "lon_deg": 114.9
+            },
+            {
+                "name": "North Pole Alaska USA",
+                "lat_deg": 64.7,
+                "lon_deg": -163.0
+            }
+        ],
+        "tdrs_visual_relays": [
+            {
+                "name": "TDRS-East 41\u00b0W GEO",
+                "lon_deg": -41.0,
+                "altitude_m": 35786000.0
+            },
+            {
+                "name": "TDRS-West 171\u00b0W GEO",
+                "lon_deg": -171.0,
+                "altitude_m": 35786000.0
+            },
+            {
+                "name": "TDRS-Guam 174\u00b0E GEO",
+                "lon_deg": 174.0,
+                "altitude_m": 35786000.0
+            }
+        ]
+    },
+    "active_imaging_target_object": {
+        "enabled": true,
+        "name": "Nashville target",
+        "lat_deg": 36.1627,
+        "lon_deg": -86.7816,
+        "position_m_eci": {
+            "x": 1000.0,
+            "y": -5000.0,
+            "z": 4000.0
+        },
+        "source": "terminal_input_only_quantum_commands_disabled"
+    },
+    "environment_vectors_object": {
+        "schema": "satellite_simulation.environment_vectors.v2",
+        "object_id": "NORAD-20580",
+        "object_type": "satellite",
+        "central_body": "Earth",
+        "sun_position_m_eci": {
+            "x": -149597870700.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "moon_position_m_eci": {
+            "x": 294000000.0,
+            "y": 247000000.0,
+            "z": 22000000.0
+        },
+        "moon_velocity_mps_eci": {
+            "x": -660.0,
+            "y": 790.0,
+            "z": 70.0
+        },
+        "sun_vector_from_object_eci": {
+            "x": -1.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "moon_vector_from_object_eci": {
+            "x": 0.76,
+            "y": 0.64,
+            "z": 0.06
+        },
+        "earth_vector_from_object_eci": {
+            "x": -1.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "nadir_vector_eci": {
+            "x": -1.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "velocity_unit_vector_eci": {
+            "x": 0.0,
+            "y": 1.0,
+            "z": 0.0
+        },
+        "distance_to_sun_m": 149604000000.0,
+        "distance_to_moon_m": 384000000.0,
+        "distance_to_earth_center_m": 6871000.0,
+        "altitude_over_earth_m": 499991.6,
+        "solar_irradiance_w_m2": 1361.0,
+        "solar_irradiance_without_eclipse_w_m2": 1361.0,
+        "earth_heliocentric_position_m": {
+            "x": 149597870700.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "earth_heliocentric_velocity_mps": {
+            "x": 0.0,
+            "y": 29784.7,
+            "z": 0.0
+        },
+        "earth_orbital_true_anomaly_rad": 0.0,
+        "earth_orbital_speed_mps": 29784.7,
+        "earth_orbital_angular_rate_rad_s": 1.99e-07,
+        "earth_rotation_rate_rad_s": 7.2921159e-05,
+        "moon_orbital_true_anomaly_rad": 0.7,
+        "moon_orbital_speed_mps": 1018.0,
+        "moon_orbital_angular_rate_rad_s": 2.6617e-06,
+        "external_control_note": "External controller can use sun/nadir/velocity vectors for roll, attitude, antenna, and solar panel optimization. The sim does not choose the control action."
+    },
+    "sunlight_state_object": {
+        "in_sunlight": true,
+        "in_eclipse": false,
+        "eclipse_body": null,
+        "nearest_shadow_body": "Earth|Moon|null",
+        "sun_exposure_factor": 1.0,
+        "shadow_margin_m": 1000000.0,
+        "distance_to_shadow_axis_m": 7371008.4,
+        "model_type": "cylindrical_earth_and_moon_shadow_geometry",
+        "used_for": [
+            "solar_panel_power_inputs",
+            "thermal_sensor_inputs",
+            "radiation_sun_exposure_inputs"
+        ]
+    },
+    "attitude_state_object": {
+        "schema": "satellite_simulation.attitude_state.v1",
+        "roll_deg": 0.0,
+        "pitch_deg": 0.0,
+        "yaw_deg": 180.0,
+        "panel_rotation_deg": 0.0,
+        "angular_rate_dps": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "angular_rate_magnitude_dps": 0.0,
+        "attitude_stability": "stable|slewing|unstable",
+        "panel_normal_eci": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 1.0
+        },
+        "antenna_normal_eci": {
+            "x": -1.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "attitude_control_source": "default_simulated_attitude_or_external_commands|external_command",
+        "sensor_confidence": 0.95,
+        "sensor_confidence_without_tcad": 0.96,
+        "tcad_degradation": "tcad_sensor_degradation_object",
+        "external_control_note": "External controller may command roll/pitch/yaw/panel_rotation. Simulation reports resulting geometry but does not optimize it internally."
+    },
+    "solar_panel_system_object": {
+        "schema": "satellite_simulation.solar_panel_system.v1",
+        "in_sunlight": true,
+        "in_eclipse": false,
+        "sun_vector_eci": {
+            "x": -1.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "panel_normal_eci": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 1.0
+        },
+        "sun_incidence_angle_deg": 90.0,
+        "panel_efficiency_factor": 0.0,
+        "solar_irradiance_w_m2": 1361.0,
+        "panel_area_m2": 4.0,
+        "panel_efficiency": 0.28,
+        "estimated_solar_generation_w": 0.0,
+        "max_solar_generation_w": 1524.32,
+        "recommended_panel_rotation_deg": 90.0,
+        "panel_rotation_rate_limit_deg_per_s": 1.2,
+        "solar_optimization_state": "near_optimal|suboptimal_angle|poor_sun_alignment",
+        "charging_priority": "low|medium|high|critical",
+        "sensor_confidence": 0.48,
+        "sensor_confidence_without_tcad": 0.48,
+        "tcad_degradation": "tcad_sensor_degradation_object",
+        "external_control_note": "External controller should use these values to command roll/panel attitude. The sim does not optimize automatically."
+    },
+    "voltage_sensors_object": {
+        "schema": "satellite_simulation.voltage_sensors.v1",
+        "solar_panel_voltage_v": 36.0,
+        "solar_panel_current_a": 20.0,
+        "battery_voltage_v": 28.5,
+        "bus_voltage_v": 27.9,
+        "bus_current_draw_a": 9.3,
+        "net_charge_current_a": 2.0,
+        "sensor_noise_fraction": 0.008,
+        "sensor_confidence": 0.95,
+        "sensor_confidence_without_tcad": 0.96,
+        "tcad_degradation": "tcad_sensor_degradation_object"
+    },
+    "power_system_object": {
+        "schema": "satellite_simulation.power_system.v1",
+        "battery_percent": 82.0,
+        "battery_capacity_wh": 1200.0,
+        "solar_generation_w": 500.0,
+        "load_w": 325.0,
+        "base_load_w": 260.0,
+        "rf_payload_load_w": 65.0,
+        "radiation_fault_load_w": 0.0,
+        "power_margin_w": 175.0,
+        "battery_charging_w": 175.0,
+        "battery_discharging_w": 0.0,
+        "power_risk_level": "low|medium|high|critical",
+        "sensor_confidence": 0.88,
+        "sensor_confidence_without_tcad": 0.89,
+        "tcad_degradation": "tcad_sensor_degradation_object"
+    },
+    "thermal_profile_object": {
+        "schema": "satellite_simulation.thermal_profile.v1",
+        "bus_temperature_c": 25.0,
+        "battery_temperature_c": 22.0,
+        "processor_temperature_c": 45.0,
+        "power_amp_temperature_c": 55.0,
+        "max_component_temperature_c": 55.0,
+        "thermal_risk_level": "low|medium|high|critical",
+        "thermal_fault_state": "nominal|watch|overtemp|critical_overtemp",
+        "in_sunlight": true,
+        "in_eclipse": false,
+        "thermal_inputs": {
+            "sunlight_heat_component_c": 6.0,
+            "electronics_heat_component_c": 11.4,
+            "radiation_storm_heat_component_c": 0.0,
+            "eclipse_cooling_component_c": 0.0
+        },
+        "temperature_sensor_noise_c": 0.25,
+        "sensor_confidence": 0.95,
+        "sensor_confidence_without_tcad": 0.96,
+        "tcad_degradation": "tcad_sensor_degradation_object"
+    },
+    "communication_link_object": {
+        "schema": "satellite_simulation.communication_link.v1",
+        "link_available": true,
+        "link_snr_db": 22.0,
+        "packet_loss_probability": 0.04,
+        "latency_ms": 42.0,
+        "rf_blackout_probability": 0.02,
+        "antenna_pointing_factor": 0.8,
+        "communication_risk_level": "low|medium|high|critical",
+        "sensor_confidence": 0.9,
+        "sensor_confidence_without_tcad": 0.91,
+        "tcad_degradation": "tcad_sensor_degradation_object"
+    },
+    "camera_sensor_object": {
+        "schema": "satellite_simulation.camera_sensor.v1",
+        "enabled": true,
+        "sensor_type": "visible_camera",
+        "target_geometry": "imaging_target_geometry_object",
+        "cumulative_dose_msv": 0.001,
+        "cumulative_particle_exposure_pfu_day": 0.01,
+        "image_noise_fraction": 0.018,
+        "hot_pixel_fraction": 2e-05,
+        "dead_pixel_fraction": 5e-06,
+        "dark_current_factor": 1.0,
+        "frame_corruption_probability": 0.001,
+        "camera_health_percent": 100.0,
+        "camera_confidence_score": 0.9,
+        "sensor_confidence": 0.9,
+        "sensor_confidence_without_tcad": 0.92,
+        "radiation_degraded": false,
+        "minimum_useful_health_percent": 35.0,
+        "degradation_rates": {
+            "dose_rate_msv_per_day": 0.35,
+            "particle_flux_pfu": 35.0,
+            "hot_pixel_growth_per_day": 1e-06,
+            "dead_pixel_growth_per_day": 1e-07,
+            "noise_growth_per_day": 0.0001,
+            "dark_current_growth_per_day": 0.0001,
+            "health_loss_per_day": 0.01,
+            "frame_corruption_probability_rate_per_day": 0.001
+        },
+        "continuous_degradation_enabled": true,
+        "tcad_degradation": "tcad_sensor_degradation_object",
+        "tcad_camera_effects": {},
+        "model_note": "Simplified imaging model: geometry, radiation degradation, thermal noise, and frame corruption are exported for external tasking. It is not a full optical ray-trace."
+    },
+    "imaging_target_geometry_object": {
+        "enabled": true,
+        "target_name": "Nashville target",
+        "target_lat_deg": 36.1627,
+        "target_lon_deg": -86.7816,
+        "target_position_m_eci": {
+            "x": 1000.0,
+            "y": -5000.0,
+            "z": 4000.0
+        },
+        "satellite_to_target_vector_eci": {
+            "x": -0.5,
+            "y": 0.5,
+            "z": 0.7
+        },
+        "slant_range_to_target_m": 1200000.0,
+        "distance_to_target_m": 1200000.0,
+        "off_nadir_angle_deg": 25.0,
+        "camera_half_angle_deg": 42.0,
+        "horizon_visible": true,
+        "within_camera_cone": true,
+        "candidate_for_imaging": true,
+        "distance_score": 0.52,
+        "pointing_geometry_score": 0.4,
+        "imaging_geometry_score": 0.21,
+        "external_decision_note": "External program should choose which satellite images this target. The sim only exports target geometry and camera health/confidence."
+    },
+    "tcad_sensor_degradation_map": {
+        "camera_sensor": "tcad_sensor_degradation_object",
+        "attitude_state": "tcad_sensor_degradation_object",
+        "solar_panel_system": "tcad_sensor_degradation_object",
+        "voltage_sensors": "tcad_sensor_degradation_object",
+        "thermal_profile": "tcad_sensor_degradation_object",
+        "communication_link": "tcad_sensor_degradation_object",
+        "passive_rf": "tcad_sensor_degradation_object",
+        "command_decoder": "tcad_sensor_degradation_object",
+        "onboard_processor": "tcad_sensor_degradation_object"
+    },
+    "tcad_sensor_degradation_object": {
+        "schema": "satellite_simulation.tcad_sensor_degradation.v1",
+        "sensor_key": "camera_sensor",
+        "tcad_sensor_type": "visible_camera_cmos",
+        "lookup_enabled": true,
+        "lookup_source": "tcad_lookup_table|simulation_fallback_equation",
+        "radiation_region": "low_earth_orbit|inner_van_allen_region|outer_van_allen_region|high_earth_orbit",
+        "sun_exposure_factor": 1.0,
+        "trapped_belt_factor": 0.35,
+        "temperature_c": 25.0,
+        "shielding_mm_aluminum": 2.5,
+        "delta_days_integrated": 5.787e-05,
+        "cumulative_dose_msv": 0.001,
+        "cumulative_particle_flux_pfu_days": 0.01,
+        "health_percent": 99.99,
+        "noise_accumulated_fraction": 1e-05,
+        "bias_drift_accumulated_fraction": 1e-06,
+        "seu_probability_per_day": 0.001,
+        "total_expected_seu_count": 1e-07,
+        "sensor_confidence": 0.98,
+        "trust_level": "normal|slightly_downweighted|heavily_downweighted|quarantine_sensor_data|unknown",
+        "safe_to_use_for_autonomous_control": true,
+        "rates_from_lookup": {
+            "health_loss_per_day": 0.01,
+            "noise_growth_per_day": 0.0001,
+            "bias_drift_per_day": 1e-05,
+            "seu_probability_per_day": 0.001
+        },
+        "lookup_quantized_inputs": {},
+        "lookup_outputs": {},
+        "note": "Every sensor is continuously degraded by integrating TCAD lookup-table rates over simulation time."
+    },
+    "sensor_fusion_state_object": {
+        "schema": "satellite_simulation.sensor_fusion_state.v1",
+        "collision_risk_score": 0.35,
+        "radiation_risk_score": 0.15,
+        "thermal_risk_score": 0.15,
+        "power_risk_score": 0.15,
+        "communication_risk_score": 0.15,
+        "solar_charging_score": 0.5,
+        "sensor_confidence_scores": "sensor_confidence_scores_object",
+        "fused_health_score": 0.85,
+        "overall_operational_risk_score": 0.25,
+        "confidence": 0.88,
+        "recommended_external_action": "continue_nominal_monitoring|evaluate_avoidance_maneuver|optimize_solar_panel_angle|reduce_payload_load_or_safe_mode|radiation_safe_mode_or_asset_switch|switch_communication_asset",
+        "candidate_external_actions": [
+            "continue_nominal_monitoring"
+        ],
+        "router_layer_included_in_simulation": false,
+        "tcad_lookup_integrated": true,
+        "tcad_degradation_note": "Overall confidence includes persistent per-sensor degradation from the TCAD lookup table."
+    },
+    "sensor_confidence_scores_object": {
+        "attitude_sensor_confidence": 0.9,
+        "solar_panel_sensor_confidence": 0.8,
+        "voltage_sensor_confidence": 0.95,
+        "battery_power_sensor_confidence": 0.85,
+        "thermal_sensor_confidence": 0.95,
+        "communication_sensor_confidence": 0.9,
+        "radiation_sensor_confidence": 0.9,
+        "passive_rf_sensor_confidence": 0.55,
+        "camera_sensor_confidence": 0.9,
+        "overall_sensor_confidence": 0.86,
+        "confidence_model_note": "Heuristic sensor confidence derived from SNR, sensor noise, geometry, battery state, camera degradation, and radiation/electronics health."
+    },
+    "radiation_environment_object": {
+        "enabled": true,
+        "model_type": "earth_orbit_space_weather_and_radiation_belt_model",
+        "description": "Earth-only radiation belts and solar-storm telemetry layer. Exports space-weather risk fields for external decision systems; no routing inside the sim.",
+        "router_layer_included": false,
+        "frame": 1234,
+        "visual_time_s": 10.2833,
+        "physical_time_s": 615.0,
+        "solar_weather": {
+            "solar_storm_active": false,
+            "active_event_name": null,
+            "severity": "quiet|moderate|strong",
+            "storm_phase": 0.0,
+            "solar_proton_flux_pfu_gt_10mev": 1.0,
+            "solar_wind_speed_km_s": 420.0,
+            "kp_index": 2.0,
+            "dst_index_nt": -8.0,
+            "dose_rate_multiplier": 1.0,
+            "rf_blackout_probability": 0.02
+        },
+        "radiation_model_parameters": {
+            "base_gcr_dose_rate_msv_per_day": 1.8,
+            "earth_leo_base_dose_rate_msv_per_day": 0.35,
+            "van_allen_inner_belt_factor": 18.0,
+            "van_allen_outer_belt_factor": 8.0,
+            "shielding_halving_thickness_mm_aluminum": 7.0,
+            "sun_vector_controls_solar_storm_exposure": true,
+            "earth_eclipse_reduces_direct_solar_storm_exposure": true
+        },
+        "counts": {
+            "monitored_objects": 50,
+            "high_radiation_risk_objects": 0,
+            "critical_radiation_risk_objects": 0,
+            "objects_with_high_or_critical_seu_risk": 0
+        },
+        "radiation_events": [
+            "radiation_event_object"
+        ],
+        "alerts": [
+            "radiation_alert_object"
+        ],
+        "object_exposures": [
+            "radiation_exposure_object"
+        ],
+        "decision_request": "radiation_aware_decision_request_object"
+    },
+    "radiation_event_object": {
+        "name": "SOLAR-STORM-WINDOW-25S|SPE-DEMO-2",
+        "status": "scheduled|active|completed",
+        "start_visual_time_s": 25.0,
+        "duration_visual_time_s": 24.0,
+        "end_visual_time_s": 49.0,
+        "severity": "moderate|strong",
+        "current_phase": 0.0,
+        "peak_solar_proton_flux_pfu": 120.0,
+        "peak_kp_index": 6.0,
+        "peak_solar_wind_speed_km_s": 650.0,
+        "peak_dose_multiplier": 6.0,
+        "rf_blackout_probability_peak": 0.18
+    },
+    "radiation_exposure_object": {
+        "object_id": "NORAD-20580",
+        "object_type": "satellite|debris|generated_debris_fragment|asteroid",
+        "central_body": "Earth",
+        "radiation_region": "low_earth_orbit|inner_van_allen_region|outer_van_allen_region|high_earth_orbit",
+        "position_m_eci": {
+            "x": 6871000.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "speed_mps": 7612.0,
+        "mass_kg": 11110.0,
+        "shielding_mm_aluminum": 2.5,
+        "shielding_factor": 0.78,
+        "baseline_dose_rate_msv_per_day": 0.35,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 0.27,
+        "particle_flux_pfu_gt_10mev": 35.0,
+        "particle_flux_pfu": 35.0,
+        "estimated_single_event_upset_rate_per_day": 0.001,
+        "single_event_upset_probability_per_day": 0.001,
+        "solar_panel_degradation_fraction_per_day": 2e-05,
+        "communications_blackout_probability": 0.02,
+        "radiation_risk_level": "low|medium|high|critical",
+        "flags": {
+            "solar_storm_active": false,
+            "sunlit_side": true,
+            "earth_shadow_shielded": false,
+            "high_dose_rate": false,
+            "critical_dose_rate": false,
+            "high_single_event_upset_risk": false,
+            "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.001,
+        "electronics_health_percent": 99.99,
+        "radiation_fault_state": "nominal|watch|degraded|critical_fault_risk",
+        "radiation_fault_active": false
+    },
+    "radiation_alert_object": {
+        "object_id": "NORAD-20580",
+        "object_type": "satellite",
+        "risk_level": "high|critical",
+        "dose_rate_msv_per_day": 10.0,
+        "estimated_single_event_upset_rate_per_day": 0.1,
+        "communications_blackout_probability": 0.4,
+        "particle_flux_pfu": 1000.0,
+        "single_event_upset_probability_per_day": 0.1,
+        "electronics_health_percent": 70.0,
+        "radiation_fault_state": "degraded"
+    },
+    "radiation_aware_decision_request_object": {
+        "enabled": true,
+        "request_type": "radiation_aware_asset_selection_and_maneuver_planning",
+        "router_layer_included_in_simulation": false,
+        "note": "Simulation only exports radiation/RF/collision/solar/thermal/power telemetry. External system should decide routing, satellite selection, roll optimization, or avoidance actions.",
+        "solar_storm_active": false,
+        "active_solar_event": null,
+        "recommended_external_considerations": [
+            "avoid selecting satellites with high or critical radiation risk"
+        ],
+        "priority_objects": [
+            "radiation_alert_object"
+        ],
+        "requires_external_decision": false
+    },
+    "passive_rf_object": {
+        "enabled": true,
+        "maxwell_based": true,
+        "model_type": "maxwell_derived_far_field_link_budget",
+        "description": "Passive RF detections from Earth satellites using a Maxwell-derived far-field electromagnetic wave approximation.",
+        "physics": {
+            "maxwell_equations_used_as_foundation": true,
+            "solves_full_spatial_eb_fields": false,
+            "approximation": "far-field link-budget / ray-style RF propagation",
+            "propagation_speed_mps": 299792458.0,
+            "frequency_hz": 2200000000.0,
+            "wavelength_m": 0.1362692990909091,
+            "includes_free_space_path_loss": true,
+            "includes_line_of_sight_blocking_by_earth": true,
+            "includes_doppler_shift": true,
+            "includes_snr_thresholding": true,
+            "includes_measurement_noise": true
+        },
+        "detections": [
+            "passive_rf_detection_object"
+        ]
+    },
+    "passive_rf_detection_object": {
+        "schema": "satellite_simulation.passive_rf_detection.v2.earth_only",
+        "sensor_id": "NORAD-20580",
+        "sensor_type": "satellite",
+        "sensor_central_body": "Earth",
+        "detected_object_id": "NORAD-33757",
+        "detected_object_type": "asteroid|debris|satellite",
+        "detected_object_central_body": "Earth",
+        "distance_m": 500000.0,
+        "estimated_range_m": 505000.0,
+        "range_uncertainty_m": 7500.0,
+        "bearing_unit_vector": {
+            "x": 0.2,
+            "y": 0.9,
+            "z": 0.1
+        },
+        "true_bearing_unit_vector_debug": {
+            "x": 0.2,
+            "y": 0.9,
+            "z": 0.1
+        },
+        "estimated_position_m_eci": {
+            "x": 7100000.0,
+            "y": 100000.0,
+            "z": 0.0
+        },
+        "relative_speed_mps": 14000.0,
+        "closing_speed_mps": 12000.0,
+        "time_to_closest_approach_s": 35.0,
+        "closest_approach_distance_m": 10000.0,
+        "received_power_dbm": -80.0,
+        "snr_db": 30.0,
+        "detection_confidence": 0.95,
+        "sensor_confidence": 0.95,
+        "maxwell_based": true,
+        "rf_model_type": "maxwell_derived_far_field_link_budget",
+        "frequency_hz": 2200000000.0,
+        "wavelength_m": 0.1362692990909091,
+        "propagation_speed_mps": 299792458.0,
+        "propagation_delay_s": 0.00167,
+        "free_space_path_loss_db": 153.0,
+        "doppler_shift_hz": 88000.0,
+        "far_field_boundary_m": 58.7,
+        "is_far_field_assumption_valid": true,
+        "antenna_gain_dbi": 14.0,
+        "processing_gain_db": 6.0,
+        "source_signature_dbm_at_1m": -25.0,
+        "noise_floor_dbm": -110.0,
+        "line_of_sight": true,
+        "blocking_body": null,
+        "threat_level": "low|medium|high|critical",
+        "measurement_timestamp": "measurement_timestamp_object"
+    },
+    "solar_environment_object": {
+        "schema": "satellite_simulation.solar_environment.v2",
+        "sun_position_m_eci": {
+            "x": -149597870700.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "sun_scene_position": {
+            "x": -23480.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "sun_visual_radius_scene_units": 109.2,
+        "moon_position_m_eci": {
+            "x": 294000000.0,
+            "y": 247000000.0,
+            "z": 22000000.0
+        },
+        "moon_velocity_mps_eci": {
+            "x": -660.0,
+            "y": 790.0,
+            "z": 70.0
+        },
+        "moon_scene_position": {
+            "x": 46.1,
+            "y": 38.8,
+            "z": 3.5
+        },
+        "moon_visual_radius_scene_units": 0.2727,
+        "moon_distance_from_earth_m": 384400000.0,
+        "sun_direction_from_earth_unit": {
+            "x": -1.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "earth_sun_distance_m": 149597870700.0,
+        "solar_constant_w_m2_at_1au": 1361.0,
+        "earth_heliocentric_position_m": {
+            "x": 149597870700.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        "earth_heliocentric_velocity_mps": {
+            "x": 0.0,
+            "y": 29784.7,
+            "z": 0.0
+        },
+        "earth_orbital_speed_mps": 29784.7,
+        "earth_orbital_angular_rate_rad_s": 1.99e-07,
+        "earth_orbital_true_anomaly_rad": 0.0,
+        "earth_rotation_rate_rad_s": 7.2921159e-05,
+        "moon_orbital_true_anomaly_rad": 0.7,
+        "moon_orbital_speed_mps": 1018.0,
+        "moon_orbital_angular_rate_rad_s": 2.6617e-06,
+        "model_note": "Earth-centered display frame with true-distance Sun vector, Earth heliocentric orbit state, Moon geocentric orbit state, and Sun/Moon third-body perturbation gravity. Control decisions are external."
+    },
+    "lunar_environment_object": {
+        "schema": "satellite_simulation.lunar_environment.v1",
+        "moon_position_m_eci": {
+            "x": 294000000.0,
+            "y": 247000000.0,
+            "z": 22000000.0
+        },
+        "moon_velocity_mps_eci": {
+            "x": -660.0,
+            "y": 790.0,
+            "z": 70.0
+        },
+        "moon_heliocentric_position_m": {
+            "x": 149891870700.0,
+            "y": 247000000.0,
+            "z": 22000000.0
+        },
+        "moon_heliocentric_velocity_mps": {
+            "x": -660.0,
+            "y": 30574.7,
+            "z": 70.0
+        },
+        "moon_distance_from_earth_m": 384400000.0,
+        "moon_radius_m": 1737400.0,
+        "moon_mu_m3_s2": 4904869500000.0,
+        "moon_orbital_true_anomaly_rad": 0.7,
+        "moon_orbital_period_s": 2360591.5,
+        "moon_orbital_speed_mps": 1018.0,
+        "moon_orbit_inclination_deg": 5.145,
+        "lunar_third_body_gravity_enabled": true
+    },
+    "environment_model_object": {
+        "enabled": true,
+        "description": "Earth/Sun/Moon environment vectors for external attitude, roll, antenna, solar panel optimization, and third-body gravity awareness.",
+        "simulation_controls_attitude_internally": false,
+        "external_controller_expected": true,
+        "mars_removed": true
+    },
+    "external_decision_request_object": {
+        "schema": "satellite_simulation.decision_request.v2.earth_sun_sensor_fusion",
+        "needs_external_decision": true,
+        "router_layer_included_in_simulation": false,
+        "simulation_does_not_choose_roll_or_route": true,
+        "external_controller_expected": true,
+        "request_count": 1,
+        "requests": [
+            {
+                "target_satellite": "NORAD-20580",
+                "recommended_external_action": "evaluate_avoidance_maneuver",
+                "candidate_external_actions": [
+                    "evaluate_avoidance_maneuver"
+                ],
+                "input_data_available": [
+                    "environment_vectors",
+                    "sunlight_state",
+                    "attitude_state",
+                    "solar_panel_system",
+                    "voltage_sensors",
+                    "power_system",
+                    "thermal_profile",
+                    "communication_link",
+                    "radiation",
+                    "camera_sensor",
+                    "imaging_target_geometry",
+                    "passive_rf_detections",
+                    "sensor_fusion_state"
+                ],
+                "reason": "sensor fusion indicates power/thermal/radiation/RF/solar condition requiring external evaluation",
+                "router_layer_included_in_simulation": false
+            }
+        ],
+        "global_considerations": [
+            "Use sun vectors, panel normals, voltages, battery, camera/target geometry, thermal sensors, and radiation fields to optimize roll/panel pointing externally.",
+            "Use RF detections and collision-risk scores before issuing thruster maneuvers.",
+            "During solar storms, account for eclipse shielding, radiation fault state, communication risk, and thermal load."
+        ]
+    },
+    "telemetry_file_object_in_mqtt_outbox_snapshots": {
+        "path": "ready_to_send_telemetry/telemetry_20260504_213000_123456_frame_00001234.json",
+        "created_unix_time_s": 1770000000.123,
+        "created_utc_iso": "2026-05-04T21:30:00.123456+00:00",
+        "write_mode": "unique_snapshot_file_for_mqtt_outbox",
+        "intended_sample_hz": 10.0,
+        "mqtt_bridge_note": "SMS communication script should publish this file and delete it after sending."
+    },
+    "final_summary_json_printed_on_end": {
+        "schema": "satellite_simulation.final_summary.v2.earth_sun_only",
+        "ended_at_unix_time_s": 1770000000.0,
+        "ended_at_utc_iso": "2026-05-04T21:30:00+00:00",
+        "frame": 2000,
+        "visual_time_s": 16.6667,
+        "physical_time_s": 10000.0,
+        "satellite_summary": {
+            "starting_satellites": 4,
+            "satellites_left": 3,
+            "active_satellites": [
+                "NORAD-12345",
+                "NORAD-23456",
+                "NORAD-34567"
+            ],
+            "destroyed_satellites": [
+                "NORAD-20580"
+            ]
+        },
+        "hazard_summary": {
+            "active_asteroids": 0,
+            "active_debris": 45,
+            "total_active_hazards": 45,
+            "active_visual_impact_events": 0
+        },
+        "system_summary": {
+            "mars_removed": true,
+            "sun_true_distance_included": true,
+            "base_telemetry_sample_hz": 10.0,
+            "effective_telemetry_sample_hz": 10.0,
+            "speed_multiplier": 1,
+            "physics_timestep_s": 5.0,
+            "earth_mu_m3_s2": 398600441800000.0,
+            "earth_radius_m": 6371008.4,
+            "earth_j2": 0.00108262668,
+            "earth_sun_distance_m": 149597870700.0,
+            "moon_distance_from_earth_m": 384400000.0,
+            "moon_gravity_included": true,
+            "sun_third_body_gravity_included": true
+        }
+    }
+}
