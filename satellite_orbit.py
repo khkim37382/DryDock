@@ -4,16 +4,45 @@ import os
 import time
 import math
 from datetime import datetime, timezone
+import sys
+
+# Allow this simulation to import the TCAD runtime helper from the DryDock/tcad folder.
+# The helper loads tcad_lookup_table.json once and uses a fast indexed lookup during telemetry.
+_THIS_DIR = os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else os.getcwd()
+_TCAD_DIR_CANDIDATES = [
+    os.path.join(_THIS_DIR, "tcad"),
+    os.path.join(os.getcwd(), "tcad"),
+    "/Users/kyuhyunkim/DryDock/tcad",
+]
+for _tcad_dir in _TCAD_DIR_CANDIDATES:
+    if os.path.isdir(_tcad_dir) and _tcad_dir not in sys.path:
+        sys.path.insert(0, _tcad_dir)
+
+try:
+    from tcad_lookup_runtime import (
+        load_tcad_lookup,
+        lookup_sensor_degradation,
+        region_to_trapped_belt_factor,
+        sensor_type_for_sim_field,
+    )
+    TCAD_RUNTIME_IMPORT_AVAILABLE = True
+except Exception as _tcad_import_error:
+    load_tcad_lookup = None
+    lookup_sensor_degradation = None
+    region_to_trapped_belt_factor = None
+    sensor_type_for_sim_field = None
+    TCAD_RUNTIME_IMPORT_AVAILABLE = False
+    TCAD_RUNTIME_IMPORT_ERROR = str(_tcad_import_error)
 
 # ============================================================
-# Earth + Sun Satellite Sensor-Fusion Simulation
+# Earth + Sun + Moon Satellite Sensor-Fusion Simulation
 # ============================================================
-# Earth-only version: no Mars, no Mars satellites/asteroids, no transfer spacecraft.
+# Earth/Sun/Moon version: no Mars, no Mars satellites/asteroids, no transfer spacecraft.
 # Outputs JSON snapshots into ready_to_send_telemetry/ for the SMS/MQTT bridge.
 #
 # Included sensor-fusion telemetry:
-# - Earth orbit physics with J2 + drag
-# - Earth/Sun geometry with true Earth-Sun distance and Earth orbital motion
+# - Earth orbit physics with J2 + drag + Sun/Moon third-body perturbations
+# - Earth/Sun/Moon geometry with true Earth-Sun distance, Earth orbital motion, and Moon orbit
 # - Sunlight/eclipse state
 # - Passive RF detections using Maxwell-derived far-field link budget
 # - Radiation belts + solar storm window starting at 25 visual seconds
@@ -22,7 +51,7 @@ from datetime import datetime, timezone
 # - Solar panel, voltage, battery/power telemetry
 # - Thermal sensor telemetry
 # - Communication link telemetry
-# - Sensor fusion risk/health scores and decision_request JSON
+# - Sensor fusion risk/health scores, TCAD lookup-table degradation, per-sensor confidence scores, and decision_request JSON
 #
 # The simulation DOES NOT decide routing or optimize roll internally.
 # It only applies external commands if another program writes them to quantum_commands.json.
@@ -45,6 +74,30 @@ def read_nonnegative_int(prompt_text, default_value):
             print("Please enter 0 or a positive number.")
             continue
         return value
+
+
+def read_float_value(prompt_text, default_value, low=None, high=None):
+    while True:
+        raw = input(f"{prompt_text} [{default_value}]: ").strip()
+        if raw == "":
+            return float(default_value)
+        try:
+            value = float(raw)
+        except ValueError:
+            print("Please enter a number like 36.1627 or -86.7816.")
+            continue
+        if low is not None and value < low:
+            print(f"Please enter a value >= {low}.")
+            continue
+        if high is not None and value > high:
+            print(f"Please enter a value <= {high}.")
+            continue
+        return value
+
+
+def read_text_value(prompt_text, default_value):
+    raw = input(f"{prompt_text} [{default_value}]: ").strip()
+    return default_value if raw == "" else raw
 
 
 print("\nEarth satellite constellation setup")
@@ -81,10 +134,19 @@ print(
     f"{REQUESTED_HEO_ASTEROIDS} HEO asteroids.\n"
 )
 
+print("\nCamera imaging target setup")
+print("Enter the ground location the satellites should report camera distance to.")
+print("This does not force a satellite to image it; it only marks the target and exports geometry for the external decision program.\n")
+
+INITIAL_TARGET_NAME = read_text_value("Target name", "Nashville target")
+INITIAL_TARGET_LAT_DEG = read_float_value("Target latitude degrees", 36.1627, -90.0, 90.0)
+INITIAL_TARGET_LON_DEG = read_float_value("Target longitude degrees", -86.7816, -180.0, 180.0)
+active_data_target = {"name": INITIAL_TARGET_NAME, "lat_deg": INITIAL_TARGET_LAT_DEG, "lon_deg": INITIAL_TARGET_LON_DEG}
+
 # -----------------------------
 # Scene setup
 # -----------------------------
-scene.title = "Earth + Sun Satellite Sensor-Fusion Simulation"
+scene.title = "Earth + Sun + Moon Satellite Sensor-Fusion Simulation"
 scene.width = 1200
 scene.height = 800
 scene.background = color.black
@@ -119,6 +181,21 @@ EARTH_ORBITAL_SPEED_MPS = math.sqrt(MU_SUN / EARTH_HELIOCENTRIC_RADIUS_M)
 
 VISUAL_SCALE = 1.0 / R_EARTH       # 1 scene unit = 1 Earth radius
 SUN_VISUAL_RADIUS_TRUE_SCALE = R_SUN / R_EARTH
+
+# Moon constants. The simulation still uses an Earth-centered inertial frame for satellites,
+# but the Moon position changes with time and contributes third-body perturbation gravity.
+MU_MOON = 4.9048695e12              # m^3/s^2
+R_MOON = 1737400.0                  # m
+MOON_SEMI_MAJOR_AXIS_M = 384400000.0
+MOON_ORBITAL_PERIOD_S = 27.321661 * 86400.0
+MOON_ORBITAL_ANGULAR_RATE_RAD_S = 2.0 * pi / MOON_ORBITAL_PERIOD_S
+MOON_ORBITAL_SPEED_MPS = math.sqrt(MU_EARTH / MOON_SEMI_MAJOR_AXIS_M)
+MOON_ORBIT_INCLINATION_DEG = 5.145
+MOON_INITIAL_PHASE_DEG = 40.0
+MOON_VISUAL_RADIUS_TRUE_SCALE = R_MOON / R_EARTH
+MOON_TRAIL_RETAIN = 2500
+ENABLE_SOLAR_THIRD_BODY_GRAVITY = True
+ENABLE_LUNAR_THIRD_BODY_GRAVITY = True
 
 # Physics timestep
 BASE_DT = 5.0
@@ -240,6 +317,60 @@ satellite_power_state = {}
 satellite_thermal_state = {}
 satellite_attitude_state = {}
 
+# Camera sensor continuous degradation state. The lookup-table/degradation layer returns
+# rates, then the sim integrates those rates over time so longer radiation exposure keeps
+# degrading sensor performance.
+CAMERA_SENSOR_MODEL_ENABLED = True
+CAMERA_BASE_IMAGE_NOISE_FRACTION = 0.018
+CAMERA_BASE_HOT_PIXEL_FRACTION = 0.00002
+CAMERA_BASE_DEAD_PIXEL_FRACTION = 0.000005
+CAMERA_BASE_DARK_CURRENT_FACTOR = 1.0
+CAMERA_BASE_FRAME_CORRUPTION_PROBABILITY = 0.001
+CAMERA_MIN_USEFUL_HEALTH_PERCENT = 35.0
+CAMERA_NADIR_HALF_ANGLE_DEG = 42.0
+CAMERA_MAX_USEFUL_SLANT_RANGE_M = 2_500_000.0
+CAMERA_DIFFRACTION_LIMIT_NOTE = "Simplified imaging model: geometry, radiation degradation, thermal noise, and frame corruption are exported for external tasking. It is not a full optical ray-trace."
+camera_sensor_state = {}
+
+# TCAD lookup-table runtime. The lookup table is generated offline by:
+#   /Users/kyuhyunkim/DryDock/tcad/generate_tcad_lookup_table.py
+# The simulation loads it once, builds/uses a SQLite index, and then continuously
+# integrates degradation for every sensor type represented in the sim.
+TCAD_LOOKUP_ENABLED = True
+TCAD_LOOKUP_TABLE_PATH = os.environ.get(
+    "TCAD_LOOKUP_TABLE_PATH",
+    "/Users/kyuhyunkim/DryDock/tcad/tcad_lookup_table.json",
+)
+TCAD_LOOKUP_SQLITE_PATH = os.environ.get(
+    "TCAD_LOOKUP_SQLITE_PATH",
+    TCAD_LOOKUP_TABLE_PATH + ".sqlite",
+)
+tcad_lookup = None
+sensor_degradation_state = {}
+
+SIM_SENSOR_TO_TCAD_SENSOR = {
+    "camera_sensor": "visible_camera_cmos",
+    "attitude_state": "star_tracker_cmos",
+    "solar_panel_system": "solar_panel_current_sensor",
+    "voltage_sensors": "voltage_sensor_adc",
+    "thermal_profile": "thermal_sensor_readout",
+    "communication_link": "communication_radio",
+    "passive_rf": "rf_frontend",
+    "command_decoder": "command_decoder",
+    "onboard_processor": "onboard_processor",
+}
+
+SENSOR_CONFIDENCE_SCORE_KEYS = {
+    "camera_sensor": "camera_sensor_confidence",
+    "attitude_state": "attitude_sensor_confidence",
+    "solar_panel_system": "solar_panel_sensor_confidence",
+    "voltage_sensors": "voltage_sensor_confidence",
+    "thermal_profile": "thermal_sensor_confidence",
+    "communication_link": "communication_sensor_confidence",
+    "passive_rf": "passive_rf_sensor_confidence",
+    "onboard_processor": "radiation_sensor_confidence",
+}
+
 # Demo timing target for guaranteed asteroid collision
 DESIRED_VISUAL_COLLISION_TIME_S = 18.0
 
@@ -347,7 +478,34 @@ def earth_heliocentric_state(physical_time_s):
 
 def current_sun_position_eci_m(physical_time_s):
     earth_pos, _, _ = earth_heliocentric_state(physical_time_s)
+    # Earth-centered inertial display frame: the Sun appears opposite Earth's heliocentric position.
     return -earth_pos
+
+
+def moon_geocentric_state(physical_time_s):
+    theta = MOON_INITIAL_PHASE_DEG * pi / 180.0 + MOON_ORBITAL_ANGULAR_RATE_RAD_S * physical_time_s
+    pos = vector(
+        MOON_SEMI_MAJOR_AXIS_M * cos(theta),
+        MOON_SEMI_MAJOR_AXIS_M * sin(theta),
+        0,
+    )
+    vel = vector(
+        -MOON_ORBITAL_SPEED_MPS * sin(theta),
+        MOON_ORBITAL_SPEED_MPS * cos(theta),
+        0,
+    )
+    pos = rotate(pos, angle=radians(MOON_ORBIT_INCLINATION_DEG), axis=vector(1, 0, 0))
+    vel = rotate(vel, angle=radians(MOON_ORBIT_INCLINATION_DEG), axis=vector(1, 0, 0))
+    return pos, vel, theta
+
+
+def current_moon_position_eci_m(physical_time_s):
+    pos, _, _ = moon_geocentric_state(physical_time_s)
+    return pos
+
+
+def current_moon_marker_pos():
+    return meters_to_scene(current_moon_position_eci_m(simulation_physical_time))
 
 
 def current_sun_marker_pos():
@@ -362,25 +520,46 @@ def solar_irradiance_at_position_w_m2(position_m, sun_position_m):
 
 
 def planet_shadow_state_for_object(position_m, sun_position_m):
-    distance_to_line_m, t = point_to_segment_distance(vector(0, 0, 0), position_m, sun_position_m)
-    shadow_margin_m = distance_to_line_m - R_EARTH
-    if 0.001 < t < 0.999 and shadow_margin_m <= 0:
+    distance_to_earth_line_m, t_earth = point_to_segment_distance(vector(0, 0, 0), position_m, sun_position_m)
+    earth_shadow_margin_m = distance_to_earth_line_m - R_EARTH
+    if 0.001 < t_earth < 0.999 and earth_shadow_margin_m <= 0:
         return {
             "in_eclipse": True,
             "eclipse_body": "Earth",
-            "shadow_margin_m": float(shadow_margin_m),
-            "distance_to_shadow_axis_m": float(distance_to_line_m),
+            "shadow_margin_m": float(earth_shadow_margin_m),
+            "distance_to_shadow_axis_m": float(distance_to_earth_line_m),
             "sun_exposure_factor": 0.0,
         }
+
+    moon_position_m = current_moon_position_eci_m(simulation_physical_time)
+    distance_to_moon_line_m, t_moon = point_to_segment_distance(moon_position_m, position_m, sun_position_m)
+    moon_shadow_margin_m = distance_to_moon_line_m - R_MOON
+    if 0.001 < t_moon < 0.999 and moon_shadow_margin_m <= 0:
+        return {
+            "in_eclipse": True,
+            "eclipse_body": "Moon",
+            "shadow_margin_m": float(moon_shadow_margin_m),
+            "distance_to_shadow_axis_m": float(distance_to_moon_line_m),
+            "sun_exposure_factor": 0.0,
+        }
+
+    nearest_body = "Earth"
+    nearest_margin = earth_shadow_margin_m if 0.001 < t_earth < 0.999 else None
+    nearest_axis = distance_to_earth_line_m if 0.001 < t_earth < 0.999 else None
+    if 0.001 < t_moon < 0.999:
+        if nearest_margin is None or moon_shadow_margin_m < nearest_margin:
+            nearest_body = "Moon"
+            nearest_margin = moon_shadow_margin_m
+            nearest_axis = distance_to_moon_line_m
+
     return {
         "in_eclipse": False,
         "eclipse_body": None,
-        "nearest_shadow_body": "Earth",
-        "shadow_margin_m": float(shadow_margin_m) if 0.001 < t < 0.999 else None,
-        "distance_to_shadow_axis_m": float(distance_to_line_m) if 0.001 < t < 0.999 else None,
+        "nearest_shadow_body": nearest_body,
+        "shadow_margin_m": float(nearest_margin) if nearest_margin is not None else None,
+        "distance_to_shadow_axis_m": float(nearest_axis) if nearest_axis is not None else None,
         "sun_exposure_factor": 1.0,
     }
-
 
 def build_sunlight_state_payload(position_m, sun_position_m):
     state = planet_shadow_state_for_object(position_m, sun_position_m)
@@ -392,15 +571,17 @@ def build_sunlight_state_payload(position_m, sun_position_m):
         "sun_exposure_factor": float(state.get("sun_exposure_factor", 1.0)),
         "shadow_margin_m": state.get("shadow_margin_m"),
         "distance_to_shadow_axis_m": state.get("distance_to_shadow_axis_m"),
-        "model_type": "cylindrical_earth_shadow_geometry",
+        "model_type": "cylindrical_earth_and_moon_shadow_geometry",
         "used_for": ["solar_panel_power_inputs", "thermal_sensor_inputs", "radiation_sun_exposure_inputs"],
     }
 
 
 def build_environment_vectors_payload(object_id, object_type, position_m, velocity_mps, physical_time_s):
     sun_position_m = current_sun_position_eci_m(physical_time_s)
+    moon_position_m, moon_velocity_mps, moon_theta = moon_geocentric_state(physical_time_s)
     earth_pos_helio, earth_vel_helio, theta = earth_heliocentric_state(physical_time_s)
     sun_vec = unit_vector_or_zero(sun_position_m - position_m)
+    moon_vec = unit_vector_or_zero(moon_position_m - position_m)
     earth_vec = unit_vector_or_zero(vector(0, 0, 0) - position_m)
     velocity_unit = unit_vector_or_zero(velocity_mps)
     shadow_state = planet_shadow_state_for_object(position_m, sun_position_m)
@@ -412,11 +593,15 @@ def build_environment_vectors_payload(object_id, object_type, position_m, veloci
         "object_type": object_type,
         "central_body": "Earth",
         "sun_position_m_eci": vector_to_dict(sun_position_m),
+        "moon_position_m_eci": vector_to_dict(moon_position_m),
+        "moon_velocity_mps_eci": vector_to_dict(moon_velocity_mps),
         "sun_vector_from_object_eci": vector_to_dict(sun_vec),
+        "moon_vector_from_object_eci": vector_to_dict(moon_vec),
         "earth_vector_from_object_eci": vector_to_dict(earth_vec),
         "nadir_vector_eci": vector_to_dict(earth_vec),
         "velocity_unit_vector_eci": vector_to_dict(velocity_unit),
         "distance_to_sun_m": float(mag(sun_position_m - position_m)),
+        "distance_to_moon_m": float(mag(moon_position_m - position_m)),
         "distance_to_earth_center_m": float(mag(position_m)),
         "altitude_over_earth_m": float(altitude_m(position_m)),
         "solar_irradiance_w_m2": float(irradiance),
@@ -427,18 +612,27 @@ def build_environment_vectors_payload(object_id, object_type, position_m, veloci
         "earth_orbital_speed_mps": float(EARTH_ORBITAL_SPEED_MPS),
         "earth_orbital_angular_rate_rad_s": float(EARTH_ORBITAL_ANGULAR_RATE_RAD_S),
         "earth_rotation_rate_rad_s": float(EARTH_ROTATION_RATE),
+        "moon_orbital_true_anomaly_rad": float(moon_theta),
+        "moon_orbital_speed_mps": float(MOON_ORBITAL_SPEED_MPS),
+        "moon_orbital_angular_rate_rad_s": float(MOON_ORBITAL_ANGULAR_RATE_RAD_S),
         "external_control_note": "External controller can use sun/nadir/velocity vectors for roll, attitude, antenna, and solar panel optimization. The sim does not choose the control action.",
     }
 
 
 def build_solar_environment_payload(physical_time_s):
     sun_pos = current_sun_position_eci_m(physical_time_s)
+    moon_pos, moon_vel, moon_theta = moon_geocentric_state(physical_time_s)
     earth_pos_helio, earth_vel_helio, theta = earth_heliocentric_state(physical_time_s)
     return {
         "schema": "satellite_simulation.solar_environment.v2",
         "sun_position_m_eci": vector_to_dict(sun_pos),
         "sun_scene_position": vector_to_dict(meters_to_scene(sun_pos)),
         "sun_visual_radius_scene_units": float(SUN_VISUAL_RADIUS_TRUE_SCALE),
+        "moon_position_m_eci": vector_to_dict(moon_pos),
+        "moon_velocity_mps_eci": vector_to_dict(moon_vel),
+        "moon_scene_position": vector_to_dict(meters_to_scene(moon_pos)),
+        "moon_visual_radius_scene_units": float(MOON_VISUAL_RADIUS_TRUE_SCALE),
+        "moon_distance_from_earth_m": float(mag(moon_pos)),
         "sun_direction_from_earth_unit": vector_to_dict(unit_vector_or_zero(sun_pos)),
         "earth_sun_distance_m": float(AU_M),
         "solar_constant_w_m2_at_1au": float(SOLAR_CONSTANT_W_M2),
@@ -448,7 +642,33 @@ def build_solar_environment_payload(physical_time_s):
         "earth_orbital_angular_rate_rad_s": float(EARTH_ORBITAL_ANGULAR_RATE_RAD_S),
         "earth_orbital_true_anomaly_rad": float(theta),
         "earth_rotation_rate_rad_s": float(EARTH_ROTATION_RATE),
-        "model_note": "True-distance Sun/Earth geometry is used for vector, eclipse, solar power, thermal, and radiation telemetry. Control decisions are external.",
+        "moon_orbital_true_anomaly_rad": float(moon_theta),
+        "moon_orbital_speed_mps": float(MOON_ORBITAL_SPEED_MPS),
+        "moon_orbital_angular_rate_rad_s": float(MOON_ORBITAL_ANGULAR_RATE_RAD_S),
+        "model_note": "Earth-centered display frame with true-distance Sun vector, Earth heliocentric orbit state, Moon geocentric orbit state, and Sun/Moon third-body perturbation gravity. Control decisions are external.",
+    }
+
+
+
+def build_lunar_environment_payload(physical_time_s):
+    moon_pos, moon_vel, theta = moon_geocentric_state(physical_time_s)
+    earth_pos_helio, earth_vel_helio, _ = earth_heliocentric_state(physical_time_s)
+    moon_helio_pos = earth_pos_helio + moon_pos
+    moon_helio_vel = earth_vel_helio + moon_vel
+    return {
+        "schema": "satellite_simulation.lunar_environment.v1",
+        "moon_position_m_eci": vector_to_dict(moon_pos),
+        "moon_velocity_mps_eci": vector_to_dict(moon_vel),
+        "moon_heliocentric_position_m": vector_to_dict(moon_helio_pos),
+        "moon_heliocentric_velocity_mps": vector_to_dict(moon_helio_vel),
+        "moon_distance_from_earth_m": float(mag(moon_pos)),
+        "moon_radius_m": float(R_MOON),
+        "moon_mu_m3_s2": float(MU_MOON),
+        "moon_orbital_true_anomaly_rad": float(theta),
+        "moon_orbital_period_s": float(MOON_ORBITAL_PERIOD_S),
+        "moon_orbital_speed_mps": float(MOON_ORBITAL_SPEED_MPS),
+        "moon_orbit_inclination_deg": float(MOON_ORBIT_INCLINATION_DEG),
+        "lunar_third_body_gravity_enabled": bool(ENABLE_LUNAR_THIRD_BODY_GRAVITY),
     }
 
 # -----------------------------
@@ -482,9 +702,34 @@ sun_label = label(
     color=color.yellow,
 )
 
+moon_marker = sphere(
+    pos=meters_to_scene(current_moon_position_eci_m(0.0)),
+    radius=max(0.08, MOON_VISUAL_RADIUS_TRUE_SCALE * 3.0),
+    color=color.white,
+    emissive=False,
+    opacity=0.95,
+    make_trail=True,
+    trail_color=color.gray(0.65),
+    retain=MOON_TRAIL_RETAIN,
+)
+moon_marker.trail_radius = 0.004
+moon_label = label(
+    pos=moon_marker.pos + vector(0.16, 0.16, 0),
+    text="Moon | orbiting Earth | gravity included",
+    height=12,
+    box=False,
+    color=color.white,
+)
+moon_orbit_curve = curve(color=color.gray(0.38), radius=0.004)
+for i in range(721):
+    theta = 2.0 * pi * i / 720.0 + radians(MOON_INITIAL_PHASE_DEG)
+    p = vector(MOON_SEMI_MAJOR_AXIS_M * cos(theta), MOON_SEMI_MAJOR_AXIS_M * sin(theta), 0)
+    p = rotate(p, angle=radians(MOON_ORBIT_INCLINATION_DEG), axis=vector(1, 0, 0))
+    moon_orbit_curve.append(pos=meters_to_scene(p))
+
 warning_label = label(pos=vector(0, 2.0, 0), text="", height=16, box=False, color=color.red)
 timer_label = label(pos=vector(-3.6, 3.0, 0), text="Visual Time: 0.0 s | Physical Time: 0 s", height=12, box=False, color=color.white)
-physics_label = label(pos=vector(-3.6, 2.78, 0), text="Physics: Earth J2 + drag, true Sun vector, sensor fusion telemetry", height=10, box=False, color=color.cyan)
+physics_label = label(pos=vector(-3.6, 2.78, 0), text="Physics: Earth J2 + drag + Sun/Moon third-body gravity, sensor fusion telemetry", height=10, box=False, color=color.cyan)
 command_label = label(pos=vector(-3.6, 2.58, 0), text="Command input: waiting for quantum_commands.json", height=10, box=False, color=color.green)
 telemetry_label = label(pos=vector(-3.6, 2.40, 0), text="Telemetry outbox: ready_to_send_telemetry, 10 Hz | speed 1x", height=10, box=False, color=color.white)
 selected_label = label(pos=vector(0, 2.35, 0), text="Selected data satellite: none", height=12, box=False, color=color.yellow)
@@ -566,6 +811,16 @@ def focus_sun_view(button_event=None):
 def focus_earth_sun_view(button_event=None):
     scene.center = (earth.pos + sun_marker.pos) / 2
     scene.range = max(10.0, mag(sun_marker.pos - earth.pos) * 0.62)
+
+
+def focus_moon_view(button_event=None):
+    scene.center = moon_marker.pos
+    scene.range = 2.2
+
+
+def focus_earth_moon_view(button_event=None):
+    scene.center = (earth.pos + moon_marker.pos) / 2
+    scene.range = max(5.0, mag(moon_marker.pos - earth.pos) * 0.68)
 
 
 def focus_default_view(button_event=None):
@@ -680,6 +935,9 @@ def build_final_summary(frame_count_value, visual_time_value, physical_time_valu
             "earth_radius_m": R_EARTH,
             "earth_j2": J2_EARTH,
             "earth_sun_distance_m": AU_M,
+            "moon_distance_from_earth_m": MOON_SEMI_MAJOR_AXIS_M,
+            "moon_gravity_included": ENABLE_LUNAR_THIRD_BODY_GRAVITY,
+            "sun_third_body_gravity_included": ENABLE_SOLAR_THIRD_BODY_GRAVITY,
         },
     }
 
@@ -732,8 +990,12 @@ button(text="Sun View", bind=focus_sun_view)
 scene.append_to_caption("  ")
 button(text="Earth + Sun View", bind=focus_earth_sun_view)
 scene.append_to_caption("  ")
+button(text="Moon View", bind=focus_moon_view)
+scene.append_to_caption("  ")
+button(text="Earth + Moon View", bind=focus_earth_moon_view)
+scene.append_to_caption("  ")
 button(text="Default View", bind=focus_default_view)
-scene.append_to_caption("\nMars, Mars satellites, Mars asteroids, and spacecraft transfer mission are removed. Scroll over an object to zoom toward your cursor.\n")
+scene.append_to_caption("\nMars, Mars satellites, Mars asteroids, and spacecraft transfer mission are removed. Moon orbit and Moon gravity are included. Scroll over an object to zoom toward your cursor.\n")
 
 # -----------------------------
 # Gravity / drag physics
@@ -756,6 +1018,14 @@ def get_gravity_acc_j2(rel_pos, mu, radius, j2_coeff):
     return acc_point + factor * j2_acc
 
 
+def third_body_perturbation_acc(object_position_m, third_body_position_m, third_body_mu):
+    object_to_body = third_body_position_m - object_position_m
+    earth_to_body = third_body_position_m
+    if mag(object_to_body) == 0 or mag(earth_to_body) == 0:
+        return vector(0, 0, 0)
+    return third_body_mu * (object_to_body / mag(object_to_body) ** 3 - earth_to_body / mag(earth_to_body) ** 3)
+
+
 def get_drag_acc(rel_pos, rel_vel, mass_kg, area_m2):
     if not ENABLE_ATMOSPHERIC_DRAG:
         return vector(0, 0, 0)
@@ -775,6 +1045,10 @@ def get_drag_acc(rel_pos, rel_vel, mass_kg, area_m2):
 def physics_acceleration_for_object(position_m, velocity_mps, mass_kg=None, area_m2=None):
     rel_pos = position_m
     gravity = get_gravity_acc_j2(rel_pos, MU_EARTH, R_EARTH, J2_EARTH)
+    if ENABLE_SOLAR_THIRD_BODY_GRAVITY:
+        gravity += third_body_perturbation_acc(rel_pos, current_sun_position_eci_m(simulation_physical_time), MU_SUN)
+    if ENABLE_LUNAR_THIRD_BODY_GRAVITY:
+        gravity += third_body_perturbation_acc(rel_pos, current_moon_position_eci_m(simulation_physical_time), MU_MOON)
     atmosphere_velocity_mps = cross(vector(0, 0, EARTH_ROTATION_RATE), rel_pos)
     rel_atmosphere_velocity_mps = velocity_mps - atmosphere_velocity_mps
     drag = get_drag_acc(rel_pos, rel_atmosphere_velocity_mps, mass_kg, area_m2)
@@ -876,14 +1150,32 @@ def create_sample_command_file_if_missing():
         pass
 
 
-def lat_lon_to_position(lat_deg, lon_deg):
+def lat_lon_to_position(lat_deg, lon_deg, physical_time_s=0.0, include_earth_rotation=True):
     lat = radians(lat_deg)
     lon = radians(lon_deg)
+    if include_earth_rotation:
+        lon += EARTH_ROTATION_RATE * physical_time_s
     return vector(cos(lat) * cos(lon), cos(lat) * sin(lon), sin(lat))
 
 
+def target_surface_position_m(target_data, physical_time_s):
+    if target_data is None:
+        return None
+    lat_deg = float(target_data.get("lat_deg", 0.0))
+    lon_deg = float(target_data.get("lon_deg", 0.0))
+    return lat_lon_to_position(lat_deg, lon_deg, physical_time_s) * R_EARTH
+
+
+def refresh_data_target_marker(physical_time_s):
+    if active_data_target is None or target_marker is None:
+        return
+    surface_pos_scene = meters_to_scene(target_surface_position_m(active_data_target, physical_time_s)) * 1.025
+    target_marker.pos = surface_pos_scene
+    target_label.pos = surface_pos_scene + vector(0.05, 0.05, 0)
+
+
 def update_data_target_marker(target_data):
-    global target_marker, target_label
+    global target_marker, target_label, active_data_target
     if target_data is None:
         return
     try:
@@ -892,9 +1184,10 @@ def update_data_target_marker(target_data):
         lon_deg = float(target_data.get("lon_deg", 0))
     except Exception:
         return
-    surface_pos = lat_lon_to_position(lat_deg, lon_deg) * 1.025
+    active_data_target = {"name": name, "lat_deg": lat_deg, "lon_deg": lon_deg}
+    surface_pos = meters_to_scene(target_surface_position_m(active_data_target, simulation_physical_time)) * 1.025
     if target_marker is None:
-        target_marker = sphere(pos=surface_pos, radius=0.03, color=color.yellow, emissive=True)
+        target_marker = sphere(pos=surface_pos, radius=0.035, color=color.yellow, emissive=True)
         target_label = label(pos=surface_pos + vector(0.05, 0.05, 0), text=name, height=10, box=False, color=color.yellow)
     else:
         target_marker.pos = surface_pos
@@ -1512,6 +1805,7 @@ def estimate_passive_rf_detection(sensor_obj, target_obj, measurement_timestamp)
         "received_power_dbm": float(received_power_dbm),
         "snr_db": float(snr_db),
         "detection_confidence": rf_detection_confidence(snr_db),
+        "sensor_confidence": rf_detection_confidence(snr_db),
         "maxwell_based": True,
         "rf_model_type": RF_MODEL_TYPE,
         "frequency_hz": float(RF_FREQUENCY_HZ),
@@ -1915,6 +2209,416 @@ def build_radiation_environment_payload(frame_count_value, visual_time_s, physic
     return payload, exposure_by_id
 
 # -----------------------------
+# Sensor confidence helpers
+# -----------------------------
+def confidence_from_noise_fraction(noise_fraction, ideal=0.005, worst=0.08):
+    return float(clamp_value(1.0 - (noise_fraction - ideal) / max(0.001, worst - ideal), 0.35, 0.99))
+
+
+def confidence_from_noise_c(noise_c, ideal=0.10, worst=3.0):
+    return float(clamp_value(1.0 - (noise_c - ideal) / max(0.001, worst - ideal), 0.35, 0.99))
+
+
+def confidence_from_snr(link_snr_db, low_db=4.0, high_db=24.0):
+    return float(clamp_value((link_snr_db - low_db) / max(0.001, high_db - low_db), 0.05, 0.99))
+
+
+def confidence_from_geometry(factor, floor=0.45):
+    return float(clamp_value(floor + (1.0 - floor) * clamp_value(factor, 0.0, 1.0), 0.0, 0.99))
+
+
+def confidence_from_health(health_percent):
+    return float(clamp_value(0.25 + 0.74 * clamp_value(health_percent / 100.0, 0.0, 1.0), 0.25, 0.99))
+
+
+def build_sensor_confidence_summary(solar_panel_system, voltage_sensors, power_system, thermal_profile, communication_link, radiation_record, rf_detections_for_sat, camera_sensor=None):
+    rf_values = [d.get("detection_confidence", 0.0) for d in rf_detections_for_sat]
+    rf_confidence = max(rf_values) if rf_values else 0.55
+    confidence = {
+        "attitude_sensor_confidence": confidence_from_geometry(solar_panel_system.get("panel_efficiency_factor", 0.0), floor=0.50),
+        "solar_panel_sensor_confidence": confidence_from_geometry(solar_panel_system.get("panel_efficiency_factor", 0.0), floor=0.42) if solar_panel_system.get("in_sunlight", False) else 0.48,
+        "voltage_sensor_confidence": confidence_from_noise_fraction(voltage_sensors.get("sensor_noise_fraction", SAT_VOLTAGE_SENSOR_NOISE_FRACTION)),
+        "battery_power_sensor_confidence": confidence_from_geometry(power_system.get("battery_percent", 0.0) / 100.0, floor=0.60),
+        "thermal_sensor_confidence": confidence_from_noise_c(thermal_profile.get("temperature_sensor_noise_c", SAT_TEMPERATURE_SENSOR_NOISE_C)),
+        "communication_sensor_confidence": confidence_from_snr(communication_link.get("link_snr_db", 0.0)),
+        "radiation_sensor_confidence": confidence_from_health((radiation_record or {}).get("electronics_health_percent", 100.0)),
+        "passive_rf_sensor_confidence": float(clamp_value(rf_confidence, 0.0, 0.99)),
+        "camera_sensor_confidence": float((camera_sensor or {}).get("sensor_confidence", 0.55)),
+    }
+    confidence["overall_sensor_confidence"] = float(sum(confidence.values()) / len(confidence))
+    confidence["confidence_model_note"] = "Heuristic sensor confidence derived from SNR, sensor noise, geometry, battery state, camera degradation, and radiation/electronics health."
+    return confidence
+
+
+# -----------------------------
+# TCAD lookup-table sensor degradation runtime
+# -----------------------------
+def initialize_tcad_lookup_runtime():
+    global tcad_lookup
+    if not TCAD_LOOKUP_ENABLED:
+        print("TCAD lookup disabled. Using built-in fallback degradation equations.")
+        return None
+    if not TCAD_RUNTIME_IMPORT_AVAILABLE or load_tcad_lookup is None:
+        print(f"TCAD runtime helper not available. Using fallback degradation equations. Import error: {globals().get('TCAD_RUNTIME_IMPORT_ERROR', 'unknown')}")
+        tcad_lookup = None
+        return None
+    print("Loading TCAD sensor-degradation lookup runtime...")
+    print(f"  lookup table: {TCAD_LOOKUP_TABLE_PATH}")
+    print(f"  sqlite cache: {TCAD_LOOKUP_SQLITE_PATH}")
+    tcad_lookup = load_tcad_lookup(
+        TCAD_LOOKUP_TABLE_PATH,
+        sqlite_path=TCAD_LOOKUP_SQLITE_PATH,
+        auto_build_cache=True,
+    )
+    print(f"TCAD lookup status: {tcad_lookup.last_load_note}")
+    return tcad_lookup
+
+
+def temperature_for_tcad_sensor(sensor_key, thermal_profile):
+    if thermal_profile is None:
+        return 25.0
+    if sensor_key == "thermal_profile":
+        return float(thermal_profile.get("bus_temperature_c", 25.0))
+    if sensor_key in ["communication_link", "passive_rf"]:
+        return float(thermal_profile.get("power_amp_temperature_c", thermal_profile.get("bus_temperature_c", 25.0)))
+    if sensor_key in ["command_decoder", "onboard_processor", "camera_sensor"]:
+        return float(thermal_profile.get("processor_temperature_c", thermal_profile.get("bus_temperature_c", 25.0)))
+    return float(thermal_profile.get("bus_temperature_c", 25.0))
+
+
+def ensure_sensor_degradation_state(sat, sensor_key):
+    sid = sat["name"]
+    sensor_id = f"{sid}:{sensor_key}"
+    sensor_degradation_state.setdefault(sensor_id, {
+        "sensor_id": sensor_id,
+        "satellite_id": sid,
+        "sensor_key": sensor_key,
+        "tcad_sensor_type": SIM_SENSOR_TO_TCAD_SENSOR.get(sensor_key, sensor_key),
+        "last_update_physical_time_s": None,
+        "cumulative_dose_msv": 0.0,
+        "cumulative_particle_flux_pfu_days": 0.0,
+        "health_percent": 100.0,
+        "noise_accumulated_fraction": 0.0,
+        "bias_drift_accumulated_fraction": 0.0,
+        "seu_probability_per_day": 0.0,
+        "total_expected_seu_count": 0.0,
+        "sensor_confidence": 0.99,
+    })
+    return sensor_degradation_state[sensor_id]
+
+
+def fallback_tcad_lookup_payload(sensor_key, state, radiation_record, temperature_c):
+    dose_rate = float((radiation_record or {}).get("dose_rate_msv_per_day", 0.0))
+    particle_flux = float((radiation_record or {}).get("particle_flux_pfu", (radiation_record or {}).get("particle_flux_pfu_gt_10mev", 1.0)))
+    sun_exposure = float((radiation_record or {}).get("sun_exposure_factor", 1.0))
+    region = (radiation_record or {}).get("radiation_region", "low_earth_orbit")
+    trapped_factor = 1.0 if region == "inner_van_allen_region" else 0.70 if region == "outer_van_allen_region" else 0.35
+    shield = 0.5 ** (float((radiation_record or {}).get("shielding_mm_aluminum", DEFAULT_SATELLITE_SHIELDING_MM_AL)) / RADIATION_SHIELDING_HALVING_THICKNESS_MM_AL)
+    severity = shield * (0.55 + 0.45 * trapped_factor) * (0.25 + 0.75 * sun_exposure)
+    sensor_mult = {
+        "camera_sensor": 1.35,
+        "attitude_state": 1.45,
+        "passive_rf": 1.15,
+        "communication_link": 1.18,
+        "voltage_sensors": 0.85,
+        "thermal_profile": 0.75,
+        "solar_panel_system": 0.85,
+        "command_decoder": 1.10,
+        "onboard_processor": 1.25,
+    }.get(sensor_key, 1.0)
+    temp_stress = max(0.0, temperature_c - 40.0) / 60.0
+    health_loss_per_day = clamp_value(sensor_mult * severity * (0.015 * dose_rate + 0.000004 * particle_flux + 0.25 * temp_stress), 0.0, 8.0)
+    noise_growth_per_day = clamp_value(sensor_mult * severity * (0.0006 * dose_rate + 0.0000008 * particle_flux + 0.015 * temp_stress), 0.0, 0.5)
+    bias_drift_per_day = clamp_value(sensor_mult * severity * (0.00025 * dose_rate + 0.006 * temp_stress), 0.0, 0.25)
+    seu_probability_per_day = clamp_value(sensor_mult * shield * (0.00001 * particle_flux + 0.0004 * dose_rate), 0.0, 0.95)
+    confidence = clamp_value(1.0 - 0.0012 * state.get("cumulative_dose_msv", 0.0) - health_loss_per_day * 0.04 - noise_growth_per_day * 0.5 - seu_probability_per_day * 0.3, 0.05, 0.99)
+    return {
+        "enabled": False,
+        "source": "simulation_fallback_equation",
+        "sensor_type": SIM_SENSOR_TO_TCAD_SENSOR.get(sensor_key, sensor_key),
+        "quantized_inputs": {
+            "cumulative_dose_msv": state.get("cumulative_dose_msv", 0.0),
+            "dose_rate_msv_per_day": dose_rate,
+            "particle_flux_pfu": particle_flux,
+            "temperature_c": temperature_c,
+            "shielding_mm_aluminum": float((radiation_record or {}).get("shielding_mm_aluminum", DEFAULT_SATELLITE_SHIELDING_MM_AL)),
+            "sun_exposure_factor": sun_exposure,
+            "trapped_belt_factor": trapped_factor,
+        },
+        "outputs": {"sensor_effects": {
+            "sensor_confidence": float(confidence),
+            "health_loss_per_day": float(health_loss_per_day),
+            "noise_growth_per_day": float(noise_growth_per_day),
+            "bias_drift_per_day": float(bias_drift_per_day),
+            "seu_probability_per_day": float(seu_probability_per_day),
+            "trust_level": "normal" if confidence >= 0.85 else "slightly_downweighted" if confidence >= 0.65 else "heavily_downweighted" if confidence >= 0.40 else "quarantine_sensor_data",
+            "safe_to_use_for_autonomous_control": bool(confidence >= 0.65),
+        }},
+        "note": "TCAD lookup runtime unavailable or lookup table not loaded; using built-in fallback equations.",
+    }
+
+
+def lookup_tcad_for_sensor(sat, sensor_key, radiation_record, thermal_profile, physical_time_s):
+    state = ensure_sensor_degradation_state(sat, sensor_key)
+    delta_days = 0.0 if state["last_update_physical_time_s"] is None else max(0.0, (physical_time_s - state["last_update_physical_time_s"]) / 86400.0)
+    state["last_update_physical_time_s"] = physical_time_s
+
+    dose_rate = float((radiation_record or {}).get("dose_rate_msv_per_day", 0.0))
+    particle_flux = float((radiation_record or {}).get("particle_flux_pfu", (radiation_record or {}).get("particle_flux_pfu_gt_10mev", 1.0)))
+    shielding = float((radiation_record or {}).get("shielding_mm_aluminum", sat.get("shielding_mm_al", DEFAULT_SATELLITE_SHIELDING_MM_AL)))
+    sun_exposure = float((radiation_record or {}).get("sun_exposure_factor", 1.0))
+    region = (radiation_record or {}).get("radiation_region", "low_earth_orbit")
+    trapped_factor = float(region_to_trapped_belt_factor(region)) if region_to_trapped_belt_factor is not None else (1.0 if region == "inner_van_allen_region" else 0.70 if region == "outer_van_allen_region" else 0.35)
+    temperature_c = temperature_for_tcad_sensor(sensor_key, thermal_profile)
+
+    state["cumulative_dose_msv"] += dose_rate * delta_days
+    state["cumulative_particle_flux_pfu_days"] += particle_flux * delta_days
+
+    tcad_sensor_type = SIM_SENSOR_TO_TCAD_SENSOR.get(sensor_key, sensor_key)
+    if lookup_sensor_degradation is not None:
+        lookup_payload = lookup_sensor_degradation(tcad_lookup, tcad_sensor_type, state["cumulative_dose_msv"], dose_rate, particle_flux, temperature_c, shielding, sun_exposure, trapped_factor)
+    else:
+        lookup_payload = fallback_tcad_lookup_payload(sensor_key, state, radiation_record, temperature_c)
+
+    outputs = lookup_payload.get("outputs", {})
+    sensor_effects = outputs.get("sensor_effects", {})
+    health_loss_per_day = float(sensor_effects.get("health_loss_per_day", 0.0))
+    noise_growth_per_day = float(sensor_effects.get("noise_growth_per_day", 0.0))
+    bias_drift_per_day = float(sensor_effects.get("bias_drift_per_day", 0.0))
+    seu_probability_per_day = float(sensor_effects.get("seu_probability_per_day", 0.0))
+    lookup_confidence = float(sensor_effects.get("sensor_confidence", state.get("sensor_confidence", 0.99)))
+
+    state["health_percent"] = clamp_value(state["health_percent"] - health_loss_per_day * delta_days, 0.0, 100.0)
+    state["noise_accumulated_fraction"] = clamp_value(state["noise_accumulated_fraction"] + noise_growth_per_day * delta_days, 0.0, 5.0)
+    state["bias_drift_accumulated_fraction"] = clamp_value(state["bias_drift_accumulated_fraction"] + bias_drift_per_day * delta_days, 0.0, 5.0)
+    state["seu_probability_per_day"] = clamp_value(seu_probability_per_day, 0.0, 1.0)
+    state["total_expected_seu_count"] += seu_probability_per_day * delta_days
+    health_confidence = clamp_value(0.05 + 0.94 * state["health_percent"] / 100.0, 0.05, 0.99)
+    accumulated_noise_penalty = clamp_value(1.0 - state["noise_accumulated_fraction"], 0.05, 1.0)
+    state["sensor_confidence"] = clamp_value(min(lookup_confidence, health_confidence) * accumulated_noise_penalty, 0.01, 0.99)
+
+    return {
+        "schema": "satellite_simulation.tcad_sensor_degradation.v1",
+        "sensor_key": sensor_key,
+        "tcad_sensor_type": tcad_sensor_type,
+        "lookup_enabled": bool(lookup_payload.get("enabled", False)),
+        "lookup_source": lookup_payload.get("source"),
+        "radiation_region": region,
+        "sun_exposure_factor": float(sun_exposure),
+        "trapped_belt_factor": float(trapped_factor),
+        "temperature_c": float(temperature_c),
+        "shielding_mm_aluminum": float(shielding),
+        "delta_days_integrated": float(delta_days),
+        "cumulative_dose_msv": float(state["cumulative_dose_msv"]),
+        "cumulative_particle_flux_pfu_days": float(state["cumulative_particle_flux_pfu_days"]),
+        "health_percent": float(state["health_percent"]),
+        "noise_accumulated_fraction": float(state["noise_accumulated_fraction"]),
+        "bias_drift_accumulated_fraction": float(state["bias_drift_accumulated_fraction"]),
+        "seu_probability_per_day": float(state["seu_probability_per_day"]),
+        "total_expected_seu_count": float(state["total_expected_seu_count"]),
+        "sensor_confidence": float(state["sensor_confidence"]),
+        "trust_level": sensor_effects.get("trust_level", "unknown"),
+        "safe_to_use_for_autonomous_control": bool(sensor_effects.get("safe_to_use_for_autonomous_control", state["sensor_confidence"] >= 0.65)),
+        "rates_from_lookup": {
+            "health_loss_per_day": float(health_loss_per_day),
+            "noise_growth_per_day": float(noise_growth_per_day),
+            "bias_drift_per_day": float(bias_drift_per_day),
+            "seu_probability_per_day": float(seu_probability_per_day),
+        },
+        "lookup_quantized_inputs": lookup_payload.get("quantized_inputs", {}),
+        "lookup_outputs": outputs,
+        "note": "Every sensor is continuously degraded by integrating TCAD lookup-table rates over simulation time.",
+    }
+
+
+def build_all_sensor_degradation_payloads(sat, radiation_record, thermal_profile, physical_time_s):
+    return {sensor_key: lookup_tcad_for_sensor(sat, sensor_key, radiation_record, thermal_profile, physical_time_s) for sensor_key in SIM_SENSOR_TO_TCAD_SENSOR}
+
+
+def apply_tcad_degradation_to_payloads(attitude_payload, solar_panel_system, voltage_sensors, power_system, thermal_profile, communication_link, camera_sensor, tcad_sensor_degradation):
+    def adjust(payload, sensor_key):
+        if payload is None:
+            return
+        degradation = tcad_sensor_degradation.get(sensor_key, {})
+        tcad_conf = float(degradation.get("sensor_confidence", payload.get("sensor_confidence", 0.99)))
+        existing_conf = float(payload.get("sensor_confidence", 0.99))
+        payload["sensor_confidence_without_tcad"] = existing_conf
+        payload["sensor_confidence"] = float(clamp_value(min(existing_conf, tcad_conf), 0.0, 0.99))
+        payload["tcad_degradation"] = degradation
+    adjust(attitude_payload, "attitude_state")
+    adjust(solar_panel_system, "solar_panel_system")
+    adjust(voltage_sensors, "voltage_sensors")
+    adjust(power_system, "voltage_sensors")
+    adjust(thermal_profile, "thermal_profile")
+    adjust(communication_link, "communication_link")
+    adjust(camera_sensor, "camera_sensor")
+    if camera_sensor is not None:
+        camera_deg = tcad_sensor_degradation.get("camera_sensor", {})
+        camera_effects = camera_deg.get("lookup_outputs", {}).get("camera_effects", {})
+        if camera_effects:
+            camera_sensor["tcad_camera_effects"] = camera_effects
+            camera_sensor["dark_current_factor"] = max(float(camera_sensor.get("dark_current_factor", 1.0)), float(camera_effects.get("dark_current_multiplier", 1.0)))
+            camera_sensor["hot_pixel_fraction"] = max(float(camera_sensor.get("hot_pixel_fraction", 0.0)), float(camera_effects.get("hot_pixel_fraction", 0.0)))
+            camera_sensor["dead_pixel_fraction"] = max(float(camera_sensor.get("dead_pixel_fraction", 0.0)), float(camera_effects.get("dead_pixel_fraction", 0.0)))
+            camera_sensor["frame_corruption_probability"] = max(float(camera_sensor.get("frame_corruption_probability", 0.0)), float(camera_effects.get("frame_corruption_probability", 0.0)))
+            camera_sensor["camera_confidence_score"] = min(float(camera_sensor.get("camera_confidence_score", 0.99)), float(camera_deg.get("sensor_confidence", 0.99)))
+            camera_sensor["sensor_confidence"] = camera_sensor["camera_confidence_score"]
+
+
+def apply_tcad_confidence_to_sensor_fusion(sensor_fusion_state, tcad_sensor_degradation):
+    scores = sensor_fusion_state.get("sensor_confidence_scores", {})
+    for sensor_key, score_key in SENSOR_CONFIDENCE_SCORE_KEYS.items():
+        if score_key not in scores:
+            continue
+        degradation = tcad_sensor_degradation.get(sensor_key)
+        if degradation is not None:
+            scores[score_key] = float(clamp_value(min(float(scores[score_key]), float(degradation.get("sensor_confidence", 0.99))), 0.0, 0.99))
+    numeric_values = [v for v in scores.values() if isinstance(v, (int, float))]
+    if numeric_values:
+        scores["overall_sensor_confidence"] = float(sum(numeric_values) / len(numeric_values))
+        sensor_fusion_state["confidence"] = float(scores["overall_sensor_confidence"])
+    sensor_fusion_state["tcad_lookup_integrated"] = True
+    sensor_fusion_state["tcad_degradation_note"] = "Overall confidence includes persistent per-sensor degradation from the TCAD lookup table."
+
+# -----------------------------
+# Camera target geometry and continuous radiation degradation
+# -----------------------------
+def build_imaging_target_geometry_payload(sat, physical_time_s):
+    if active_data_target is None:
+        return {"enabled": False, "reason": "no_target_configured"}
+    target_pos_m = target_surface_position_m(active_data_target, physical_time_s)
+    sat_pos = sat["position_m"]
+    sat_to_target = target_pos_m - sat_pos
+    slant_range_m = mag(sat_to_target)
+    nadir_vec = unit_vector_or_zero(-sat_pos)
+    target_vec = unit_vector_or_zero(sat_to_target)
+    off_nadir_angle_deg = degrees(math.acos(clamp_value(dot(nadir_vec, target_vec), -1.0, 1.0))) if mag(target_vec) > 0 else 180.0
+    target_surface_normal = unit_vector_or_zero(target_pos_m)
+    horizon_visible = dot(unit_vector_or_zero(sat_pos - target_pos_m), target_surface_normal) > 0.0
+    within_camera_cone = off_nadir_angle_deg <= CAMERA_NADIR_HALF_ANGLE_DEG
+    distance_score = clamp_value(1.0 - slant_range_m / CAMERA_MAX_USEFUL_SLANT_RANGE_M, 0.0, 1.0)
+    pointing_score = clamp_value(1.0 - off_nadir_angle_deg / max(1.0, CAMERA_NADIR_HALF_ANGLE_DEG), 0.0, 1.0)
+    imaging_geometry_score = distance_score * pointing_score * (1.0 if horizon_visible else 0.0)
+    return {
+        "enabled": True,
+        "target_name": active_data_target.get("name"),
+        "target_lat_deg": float(active_data_target.get("lat_deg", 0.0)),
+        "target_lon_deg": float(active_data_target.get("lon_deg", 0.0)),
+        "target_position_m_eci": vector_to_dict(target_pos_m),
+        "satellite_to_target_vector_eci": vector_to_dict(unit_vector_or_zero(sat_to_target)),
+        "slant_range_to_target_m": float(slant_range_m),
+        "distance_to_target_m": float(slant_range_m),
+        "off_nadir_angle_deg": float(off_nadir_angle_deg),
+        "camera_half_angle_deg": float(CAMERA_NADIR_HALF_ANGLE_DEG),
+        "horizon_visible": bool(horizon_visible),
+        "within_camera_cone": bool(within_camera_cone),
+        "candidate_for_imaging": bool(horizon_visible and within_camera_cone),
+        "distance_score": float(distance_score),
+        "pointing_geometry_score": float(pointing_score),
+        "imaging_geometry_score": float(imaging_geometry_score),
+        "external_decision_note": "External program should choose which satellite images this target. The sim only exports target geometry and camera health/confidence."
+    }
+
+
+def ensure_camera_sensor_state(sat):
+    sid = sat["name"]
+    camera_sensor_state.setdefault(sid, {
+        "cumulative_dose_msv": 0.0,
+        "cumulative_particle_exposure": 0.0,
+        "hot_pixel_fraction": CAMERA_BASE_HOT_PIXEL_FRACTION,
+        "dead_pixel_fraction": CAMERA_BASE_DEAD_PIXEL_FRACTION,
+        "image_noise_fraction": CAMERA_BASE_IMAGE_NOISE_FRACTION,
+        "dark_current_factor": CAMERA_BASE_DARK_CURRENT_FACTOR,
+        "frame_corruption_probability": CAMERA_BASE_FRAME_CORRUPTION_PROBABILITY,
+        "camera_health_percent": 100.0,
+        "last_update_physical_time_s": None,
+    })
+    return camera_sensor_state[sid]
+
+
+def camera_lookup_degradation_rates(radiation_record, temperature_c):
+    # This acts like the lookup-table interface: environment values in, sensor-specific degradation rates out.
+    # You can replace these equations with a CSV/JSON lookup table later without changing the payload structure.
+    if radiation_record is None:
+        dose_rate = 0.0
+        particle_flux = 0.0
+        seu_probability = 0.0
+        storm_active = False
+    else:
+        dose_rate = float(radiation_record.get("dose_rate_msv_per_day", 0.0))
+        particle_flux = float(radiation_record.get("particle_flux_pfu", radiation_record.get("particle_flux_pfu_gt_10mev", 0.0)))
+        seu_probability = float(radiation_record.get("single_event_upset_probability_per_day", 0.0))
+        storm_active = bool(radiation_record.get("flags", {}).get("solar_storm_active", False))
+    temp_factor = clamp_value(1.0 + max(0.0, temperature_c - 20.0) / 65.0, 1.0, 2.3)
+    storm_factor = 1.8 if storm_active else 1.0
+    return {
+        "dose_rate_msv_per_day": dose_rate,
+        "particle_flux_pfu": particle_flux,
+        "hot_pixel_growth_per_day": (2.0e-6 * dose_rate + 1.0e-9 * particle_flux) * storm_factor,
+        "dead_pixel_growth_per_day": (4.0e-7 * dose_rate + 2.0e-10 * particle_flux) * storm_factor,
+        "noise_growth_per_day": (1.5e-4 * dose_rate + 5.0e-8 * particle_flux) * temp_factor * storm_factor,
+        "dark_current_growth_per_day": (8.0e-4 * dose_rate * temp_factor) * storm_factor,
+        "health_loss_per_day": (0.020 * dose_rate + 4.0 * seu_probability) * storm_factor,
+        "frame_corruption_probability_rate_per_day": (0.10 * seu_probability + 1.0e-7 * particle_flux) * storm_factor,
+    }
+
+
+def integrate_camera_degradation(sat, radiation_record, thermal_profile, physical_time_s):
+    state = ensure_camera_sensor_state(sat)
+    last_time = state.get("last_update_physical_time_s")
+    if last_time is None:
+        delta_days = 0.0
+    else:
+        delta_days = max(0.0, (physical_time_s - last_time) / 86400.0)
+    state["last_update_physical_time_s"] = physical_time_s
+
+    temperature_c = float(thermal_profile.get("bus_temperature_c", 20.0)) if thermal_profile else 20.0
+    rates = camera_lookup_degradation_rates(radiation_record, temperature_c)
+    state["cumulative_dose_msv"] += rates["dose_rate_msv_per_day"] * delta_days
+    state["cumulative_particle_exposure"] += rates["particle_flux_pfu"] * delta_days
+    state["hot_pixel_fraction"] = clamp_value(state["hot_pixel_fraction"] + rates["hot_pixel_growth_per_day"] * delta_days, 0.0, 0.25)
+    state["dead_pixel_fraction"] = clamp_value(state["dead_pixel_fraction"] + rates["dead_pixel_growth_per_day"] * delta_days, 0.0, 0.20)
+    state["image_noise_fraction"] = clamp_value(state["image_noise_fraction"] + rates["noise_growth_per_day"] * delta_days, 0.0, 0.75)
+    state["dark_current_factor"] = clamp_value(state["dark_current_factor"] + rates["dark_current_growth_per_day"] * delta_days, 1.0, 12.0)
+    state["frame_corruption_probability"] = clamp_value(CAMERA_BASE_FRAME_CORRUPTION_PROBABILITY + rates["frame_corruption_probability_rate_per_day"], 0.0, 0.95)
+    health_loss = rates["health_loss_per_day"] * delta_days
+    pixel_damage_loss = (rates["hot_pixel_growth_per_day"] * 120.0 + rates["dead_pixel_growth_per_day"] * 300.0) * delta_days
+    state["camera_health_percent"] = clamp_value(state["camera_health_percent"] - health_loss - pixel_damage_loss, 0.0, 100.0)
+    return state, rates
+
+
+def build_camera_sensor_payload(sat, radiation_record, thermal_profile, target_geometry, physical_time_s):
+    state, rates = integrate_camera_degradation(sat, radiation_record, thermal_profile, physical_time_s)
+    geometry_score = float(target_geometry.get("imaging_geometry_score", 0.0)) if target_geometry else 0.0
+    health_score = clamp_value(state["camera_health_percent"] / 100.0, 0.0, 1.0)
+    noise_penalty = clamp_value(1.0 - state["image_noise_fraction"], 0.0, 1.0)
+    hot_dead_penalty = clamp_value(1.0 - 2.2 * state["hot_pixel_fraction"] - 3.0 * state["dead_pixel_fraction"], 0.0, 1.0)
+    corruption_penalty = clamp_value(1.0 - state["frame_corruption_probability"], 0.0, 1.0)
+    camera_confidence = clamp_value(0.45 * health_score + 0.20 * noise_penalty + 0.15 * hot_dead_penalty + 0.10 * corruption_penalty + 0.10 * geometry_score, 0.0, 0.99)
+    degraded = bool(state["camera_health_percent"] < 90.0 or state["image_noise_fraction"] > 0.06 or state["hot_pixel_fraction"] > 0.001 or state["frame_corruption_probability"] > 0.02)
+    return {
+        "schema": "satellite_simulation.camera_sensor.v1",
+        "enabled": bool(CAMERA_SENSOR_MODEL_ENABLED),
+        "sensor_type": "visible_camera",
+        "target_geometry": target_geometry,
+        "cumulative_dose_msv": float(state["cumulative_dose_msv"]),
+        "cumulative_particle_exposure_pfu_day": float(state["cumulative_particle_exposure"]),
+        "image_noise_fraction": float(state["image_noise_fraction"]),
+        "hot_pixel_fraction": float(state["hot_pixel_fraction"]),
+        "dead_pixel_fraction": float(state["dead_pixel_fraction"]),
+        "dark_current_factor": float(state["dark_current_factor"]),
+        "frame_corruption_probability": float(state["frame_corruption_probability"]),
+        "camera_health_percent": float(state["camera_health_percent"]),
+        "camera_confidence_score": float(camera_confidence),
+        "sensor_confidence": float(camera_confidence),
+        "radiation_degraded": degraded,
+        "minimum_useful_health_percent": float(CAMERA_MIN_USEFUL_HEALTH_PERCENT),
+        "degradation_rates": rates,
+        "continuous_degradation_enabled": True,
+        "model_note": CAMERA_DIFFRACTION_LIMIT_NOTE,
+    }
+
+# -----------------------------
 # Solar/power/thermal/attitude sensor-fusion helpers
 # -----------------------------
 def panel_normal_from_attitude(sat, sun_position_m):
@@ -2007,6 +2711,7 @@ def build_attitude_state_payload(sat, physical_time_s, sun_position_m):
         "panel_normal_eci": vector_to_dict(panel_normal),
         "antenna_normal_eci": vector_to_dict(antenna_normal),
         "attitude_control_source": att.get("attitude_control_source", SAT_ATTITUDE_EXTERNAL_CONTROL_DEFAULT),
+        "sensor_confidence": confidence_from_geometry(1.0 - min(1.0, rate_mag / 5.0), floor=0.55),
         "external_control_note": "External controller may command roll/pitch/yaw/panel_rotation. Simulation reports resulting geometry but does not optimize it internally.",
     }
 
@@ -2095,6 +2800,7 @@ def build_solar_power_thermal_payloads(sat, radiation_record, rf_detections_for_
         "panel_rotation_rate_limit_deg_per_s": float(SAT_PANEL_ROTATION_RATE_LIMIT_DEG_PER_S),
         "solar_optimization_state": optimization_state,
         "charging_priority": charging_priority_from_battery(battery_percent),
+        "sensor_confidence": confidence_from_geometry(cos_incidence, floor=0.42) if sunlight["in_sunlight"] else 0.48,
         "external_control_note": "External controller should use these values to command roll/panel attitude. The sim does not optimize automatically.",
     }
 
@@ -2107,6 +2813,7 @@ def build_solar_power_thermal_payloads(sat, radiation_record, rf_detections_for_
         "bus_current_draw_a": float(bus_current_draw_a),
         "net_charge_current_a": float(net_charge_current_a),
         "sensor_noise_fraction": float(SAT_VOLTAGE_SENSOR_NOISE_FRACTION),
+        "sensor_confidence": confidence_from_noise_fraction(SAT_VOLTAGE_SENSOR_NOISE_FRACTION),
     }
 
     power_system = {
@@ -2122,6 +2829,7 @@ def build_solar_power_thermal_payloads(sat, radiation_record, rf_detections_for_
         "battery_charging_w": float(max(0.0, power_margin_w)),
         "battery_discharging_w": float(max(0.0, -power_margin_w)),
         "power_risk_level": power_risk,
+        "sensor_confidence": confidence_from_geometry(battery_percent / 100.0, floor=0.60),
     }
 
     thermal_profile = {
@@ -2142,6 +2850,7 @@ def build_solar_power_thermal_payloads(sat, radiation_record, rf_detections_for_
             "eclipse_cooling_component_c": float(eclipse_cooling_c),
         },
         "temperature_sensor_noise_c": float(SAT_TEMPERATURE_SENSOR_NOISE_C),
+        "sensor_confidence": confidence_from_noise_c(SAT_TEMPERATURE_SENSOR_NOISE_C),
     }
 
     return solar_panel_system, voltage_sensors, power_system, thermal_profile
@@ -2171,10 +2880,11 @@ def build_communication_link_payload(sat, radiation_record, attitude_payload, rf
         "rf_blackout_probability": float(radiation_blackout),
         "antenna_pointing_factor": float(pointing_factor),
         "communication_risk_level": risk,
+        "sensor_confidence": confidence_from_snr(link_snr_db),
     }
 
 
-def build_sensor_fusion_state(sat, radiation_record, solar_panel_system, power_system, thermal_profile, communication_link, rf_detections_for_sat):
+def build_sensor_fusion_state(sat, radiation_record, solar_panel_system, voltage_sensors, power_system, thermal_profile, communication_link, rf_detections_for_sat, camera_sensor=None):
     critical_rf = any(d.get("threat_level") == "critical" for d in rf_detections_for_sat)
     high_rf = any(d.get("threat_level") == "high" for d in rf_detections_for_sat)
     if critical_rf:
@@ -2190,6 +2900,7 @@ def build_sensor_fusion_state(sat, radiation_record, solar_panel_system, power_s
     power_risk = risk_score_from_level(power_system.get("power_risk_level", "low"))
     comm_risk = risk_score_from_level(communication_link.get("communication_risk_level", "low"))
     solar_charging_score = clamp_value(solar_panel_system.get("panel_efficiency_factor", 0.0) * (1.0 if solar_panel_system.get("in_sunlight") else 0.0), 0.0, 1.0)
+    sensor_confidence_scores = build_sensor_confidence_summary(solar_panel_system, voltage_sensors, power_system, thermal_profile, communication_link, radiation_record, rf_detections_for_sat, camera_sensor)
     health_components = [
         1.0 - radiation_risk,
         1.0 - thermal_risk,
@@ -2220,9 +2931,10 @@ def build_sensor_fusion_state(sat, radiation_record, solar_panel_system, power_s
         "power_risk_score": float(power_risk),
         "communication_risk_score": float(comm_risk),
         "solar_charging_score": float(solar_charging_score),
+        "sensor_confidence_scores": sensor_confidence_scores,
         "fused_health_score": float(fused_health),
         "overall_operational_risk_score": float(overall_risk),
-        "confidence": float(clamp_value(0.72 + 0.18 * len(rf_detections_for_sat) / max(1, MAX_RF_DETECTIONS_PER_SENSOR), 0.0, 0.96)),
+        "confidence": float(sensor_confidence_scores["overall_sensor_confidence"]),
         "recommended_external_action": actions[0],
         "candidate_external_actions": actions,
         "router_layer_included_in_simulation": False,
@@ -2270,7 +2982,7 @@ def build_external_decision_request(satellite_states, passive_rf_detections, rad
                 "input_data_available": [
                     "environment_vectors", "sunlight_state", "attitude_state", "solar_panel_system",
                     "voltage_sensors", "power_system", "thermal_profile", "communication_link",
-                    "radiation", "passive_rf_detections", "sensor_fusion_state",
+                    "radiation", "camera_sensor", "imaging_target_geometry", "passive_rf_detections", "sensor_fusion_state",
                 ],
                 "reason": "sensor fusion indicates power/thermal/radiation/RF/solar condition requiring external evaluation",
                 "router_layer_included_in_simulation": False,
@@ -2284,7 +2996,7 @@ def build_external_decision_request(satellite_states, passive_rf_detections, rad
         "request_count": len(requests),
         "requests": requests[:20],
         "global_considerations": [
-            "Use sun vectors, panel normals, voltages, battery, thermal sensors, and radiation fields to optimize roll/panel pointing externally.",
+            "Use sun vectors, panel normals, voltages, battery, camera/target geometry, thermal sensors, and radiation fields to optimize roll/panel pointing externally.",
             "Use RF detections and collision-risk scores before issuing thruster maneuvers.",
             "During solar storms, account for eclipse shielding, radiation fault state, communication risk, and thermal load.",
         ],
@@ -2318,7 +3030,12 @@ def build_telemetry_payload(frame_count_value, visual_time_s, physical_time_s, s
         attitude_payload = build_attitude_state_payload(sat, physical_time_s, current_sun_position_eci_m(physical_time_s))
         solar_panel_system, voltage_sensors, power_system, thermal_profile = build_solar_power_thermal_payloads(sat, radiation_record, rf_for_sat, physical_time_s)
         communication_link = build_communication_link_payload(sat, radiation_record, attitude_payload, rf_for_sat)
-        sensor_fusion_state = build_sensor_fusion_state(sat, radiation_record, solar_panel_system, power_system, thermal_profile, communication_link, rf_for_sat)
+        imaging_target_geometry = build_imaging_target_geometry_payload(sat, physical_time_s)
+        camera_sensor = build_camera_sensor_payload(sat, radiation_record, thermal_profile, imaging_target_geometry, physical_time_s)
+        tcad_sensor_degradation = build_all_sensor_degradation_payloads(sat, radiation_record, thermal_profile, physical_time_s)
+        apply_tcad_degradation_to_payloads(attitude_payload, solar_panel_system, voltage_sensors, power_system, thermal_profile, communication_link, camera_sensor, tcad_sensor_degradation)
+        sensor_fusion_state = build_sensor_fusion_state(sat, radiation_record, solar_panel_system, voltage_sensors, power_system, thermal_profile, communication_link, rf_for_sat, camera_sensor)
+        apply_tcad_confidence_to_sensor_fusion(sensor_fusion_state, tcad_sensor_degradation)
         satellite_states.append(object_state_dict(
             object_id=sat["name"],
             object_type="satellite",
@@ -2342,8 +3059,13 @@ def build_telemetry_payload(frame_count_value, visual_time_s, physical_time_s, s
                 "power_system": power_system,
                 "thermal_profile": thermal_profile,
                 "communication_link": communication_link,
+                "camera_sensor": camera_sensor,
+                "tcad_sensor_degradation": tcad_sensor_degradation,
+                "imaging_target_geometry": imaging_target_geometry,
+                "distance_to_imaging_target_m": imaging_target_geometry.get("distance_to_target_m"),
                 "radiation": radiation_record,
                 "sensor_fusion_state": sensor_fusion_state,
+                "sensor_confidence_scores": sensor_fusion_state.get("sensor_confidence_scores", {}),
             },
         ))
 
@@ -2414,6 +3136,13 @@ def build_telemetry_payload(frame_count_value, visual_time_s, physical_time_s, s
             "earth_rotation_rate_rad_s": EARTH_ROTATION_RATE,
             "earth_orbital_speed_mps": EARTH_ORBITAL_SPEED_MPS,
             "earth_orbital_angular_rate_rad_s": EARTH_ORBITAL_ANGULAR_RATE_RAD_S,
+            "moon_mu_m3_s2": MU_MOON,
+            "moon_radius_m": R_MOON,
+            "moon_semi_major_axis_m": MOON_SEMI_MAJOR_AXIS_M,
+            "moon_orbital_period_s": MOON_ORBITAL_PERIOD_S,
+            "moon_orbital_angular_rate_rad_s": MOON_ORBITAL_ANGULAR_RATE_RAD_S,
+            "solar_third_body_gravity_enabled": ENABLE_SOLAR_THIRD_BODY_GRAVITY,
+            "lunar_third_body_gravity_enabled": ENABLE_LUNAR_THIRD_BODY_GRAVITY,
             "time_step_s": dt,
             "base_time_step_s": BASE_DT,
             "speed_multiplier": simulation_speed_multiplier,
@@ -2426,6 +3155,13 @@ def build_telemetry_payload(frame_count_value, visual_time_s, physical_time_s, s
             "radiation_model_enabled": RADIATION_MODEL_ENABLED,
             "radiation_model_type": RADIATION_MODEL_TYPE,
             "solar_sensor_model_enabled": SOLAR_SENSOR_MODEL_ENABLED,
+            "camera_sensor_model_enabled": CAMERA_SENSOR_MODEL_ENABLED,
+            "camera_continuous_degradation_enabled": True,
+            "tcad_lookup_enabled": bool(TCAD_LOOKUP_ENABLED),
+            "tcad_runtime_import_available": bool(TCAD_RUNTIME_IMPORT_AVAILABLE),
+            "tcad_lookup_table_path": TCAD_LOOKUP_TABLE_PATH,
+            "tcad_lookup_loaded": bool(tcad_lookup is not None and getattr(tcad_lookup, "enabled", False)),
+            "tcad_lookup_status": getattr(tcad_lookup, "last_load_note", "not_loaded"),
             "router_layer_included": False,
         },
         "counts": {
@@ -2446,10 +3182,19 @@ def build_telemetry_payload(frame_count_value, visual_time_s, physical_time_s, s
         "asteroids": asteroid_states,
         "debris": debris_states,
         "hazards": all_hazards,
+        "active_imaging_target": {
+            "enabled": active_data_target is not None,
+            "name": None if active_data_target is None else active_data_target.get("name"),
+            "lat_deg": None if active_data_target is None else float(active_data_target.get("lat_deg", 0.0)),
+            "lon_deg": None if active_data_target is None else float(active_data_target.get("lon_deg", 0.0)),
+            "position_m_eci": None if active_data_target is None else vector_to_dict(target_surface_position_m(active_data_target, physical_time_s)),
+            "source": "terminal_input_or_quantum_commands_json",
+        },
         "solar_environment": build_solar_environment_payload(physical_time_s),
+        "lunar_environment": build_lunar_environment_payload(physical_time_s),
         "environment_model": {
             "enabled": True,
-            "description": "Earth/Sun-only environment vectors for external attitude, roll, antenna, and solar panel optimization.",
+            "description": "Earth/Sun/Moon environment vectors for external attitude, roll, antenna, solar panel optimization, and third-body gravity awareness.",
             "simulation_controls_attitude_internally": False,
             "external_controller_expected": True,
             "mars_removed": True,
@@ -2530,8 +3275,7 @@ def export_telemetry(frame_count_value, visual_time_s, physical_time_s, satellit
                 f"{payload['counts']['active_debris']} debris | RF {payload['counts'].get('passive_rf_detections', 0)} | frame {payload['frame']}"
             )
             telemetry_label.color = color.white
-            if frame_count_value == 0 or frame_count_value % max(1, int(rate_value * 5)) == 0:
-                print(f"Telemetry snapshot queued: {output_path}")
+            # Intentionally quiet: telemetry files are written without spamming the terminal.
         except Exception as e:
             telemetry_label.text = f"Telemetry outbox error: {e}"
             telemetry_label.color = color.red
@@ -2540,6 +3284,9 @@ def export_telemetry(frame_count_value, visual_time_s, physical_time_s, satellit
         write_live_telemetry_json(payload)
     elif TELEMETRY_OUTPUT_MODE == "terminal":
         print(json.dumps(payload, indent=2))
+
+# Create the initial terminal-entered target marker. External commands can replace it later.
+update_data_target_marker(active_data_target)
 
 # -----------------------------
 # Build systems
@@ -2642,6 +3389,7 @@ def active_satellite_count():
 
 print("Telemetry output mode:", TELEMETRY_OUTPUT_MODE)
 print(f"Telemetry snapshots will be queued in '{MQTT_TELEMETRY_OUTPUT_DIR}' at {effective_telemetry_sample_hz():.1f} Hz.")
+initialize_tcad_lookup_runtime()
 
 # Initial telemetry snapshot
 export_telemetry(0, 0.0, 0.0, satellites, asteroids, debris_particles)
@@ -2665,6 +3413,9 @@ while True:
     # Update true-distance Sun marker and label based on Earth orbital path.
     sun_marker.pos = meters_to_scene(current_sun_position_eci_m(physical_time))
     sun_label.pos = sun_marker.pos + vector(0, -SUN_VISUAL_RADIUS_TRUE_SCALE * 1.15, 0)
+    moon_marker.pos = meters_to_scene(current_moon_position_eci_m(physical_time))
+    moon_label.pos = moon_marker.pos + vector(0.16, 0.16, 0)
+    refresh_data_target_marker(physical_time)
 
     timer_label.text = f"Visual Time: {visual_time:.1f} s | Physical Time: {physical_time:.0f} s | Speed: {simulation_speed_multiplier}x"
 
