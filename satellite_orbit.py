@@ -54,7 +54,8 @@ except Exception as _tcad_import_error:
 # - Sensor fusion risk/health scores, TCAD lookup-table degradation, per-sensor confidence scores, and decision_request JSON
 #
 # The simulation DOES NOT decide routing or optimize roll internally.
-# It only applies external commands if another program writes them to quantum_commands.json.
+# Live quantum_commands.json intake is intentionally disabled for this version.
+# Use the VPython buttons and terminal setup inputs only.
 # ============================================================
 
 # -----------------------------
@@ -147,15 +148,34 @@ active_data_target = {"name": INITIAL_TARGET_NAME, "lat_deg": INITIAL_TARGET_LAT
 # Scene setup
 # -----------------------------
 scene.title = "Earth + Sun + Moon Satellite Sensor-Fusion Simulation"
-scene.width = 1200
-scene.height = 800
+scene.width = 1400
+scene.height = 880
 scene.background = color.black
-scene.forward = vector(-1, -0.35, -0.9)
+scene.forward = vector(-1.15, -0.55, -1.0)
 scene.center = vector(0, 0, 0)
-scene.range = 5.2
+scene.range = 4.8
 scene.userspin = True
-scene.userzoom = False
+scene.userzoom = True
 scene.userpan = True
+scene.ambient = color.gray(0.18)
+
+# -----------------------------
+# Visual polish settings only. These do not change any orbital, sensor, radiation,
+# power, thermal, RF, or collision physics.
+# -----------------------------
+EARTH_ATMOSPHERE_VISUAL_OPACITY = 0.13
+EARTH_ATMOSPHERE_VISUAL_RADIUS = 1.035
+SENSOR_BEAM_VISUAL_LENGTH = 0.72
+SENSOR_BEAM_VISUAL_RADIUS = 0.20
+SENSOR_BEAM_DEFAULT_OPACITY = 0.12
+RF_DETECTION_LINE_RETAIN_FRAMES = 45
+MAX_RF_DETECTION_VISUAL_LINES = 16
+SATELLITE_BODY_SCALE_MULTIPLIER = 1.18
+ORBIT_LINE_VISUAL_RADIUS = 0.0035
+HEO_ORBIT_LINE_VISUAL_RADIUS = 0.0040
+MOON_ORBIT_LINE_VISUAL_RADIUS = 0.0030
+SHOW_SENSOR_BEAMS = True
+SHOW_RF_DETECTION_LINES = False  # Off by default because live curve redraws can make VPython look paused
 
 # -----------------------------
 # Physical constants
@@ -206,8 +226,9 @@ simulation_speed_index = 0
 simulation_speed_multiplier = SIMULATION_SPEED_OPTIONS[simulation_speed_index]
 
 # Live command / telemetry
-COMMAND_FILE = "quantum_commands.json"
-COMMAND_CHECK_INTERVAL_FRAMES = 30
+COMMAND_FILE = None
+COMMAND_CHECK_INTERVAL_FRAMES = None
+EXTERNAL_QUANTUM_COMMANDS_ENABLED = False
 TELEMETRY_OUTPUT_MODE = "mqtt_outbox"
 BASE_TELEMETRY_SAMPLE_HZ = 10.0
 MQTT_TELEMETRY_OUTPUT_DIR = "ready_to_send_telemetry"
@@ -675,15 +696,22 @@ def build_lunar_environment_payload(physical_time_s):
 # Scene objects
 # -----------------------------
 earth = sphere(pos=vector(0, 0, 0), radius=1, texture=textures.earth, shininess=0.4)
+earth_atmosphere = sphere(
+    pos=earth.pos,
+    radius=EARTH_ATMOSPHERE_VISUAL_RADIUS,
+    color=color.cyan,
+    opacity=EARTH_ATMOSPHERE_VISUAL_OPACITY,
+    shininess=0,
+)
 earth_label = label(pos=vector(0, -1.30, 0), text="Earth", height=16, box=False, color=color.white)
 
 inner_radiation_belt_ring = ring(
     pos=earth.pos, axis=vector(0, 0, 1), radius=(R_EARTH + 4_000_000.0) / R_EARTH,
-    thickness=0.025, color=color.yellow, opacity=0.28
+    thickness=0.018, color=color.yellow, opacity=0.18
 )
 outer_radiation_belt_ring = ring(
     pos=earth.pos, axis=vector(0, 0, 1), radius=(R_EARTH + 22_000_000.0) / R_EARTH,
-    thickness=0.035, color=color.orange, opacity=0.22
+    thickness=0.024, color=color.orange, opacity=0.16
 )
 radiation_belt_label = label(pos=vector(0, 4.25, 0), text="Earth radiation belts", height=11, box=False, color=color.yellow)
 
@@ -694,6 +722,14 @@ sun_marker = sphere(
     emissive=True,
     opacity=0.92,
 )
+sun_glow = sphere(
+    pos=sun_marker.pos,
+    radius=SUN_VISUAL_RADIUS_TRUE_SCALE * 1.22,
+    color=color.orange,
+    opacity=0.16,
+    emissive=True,
+)
+sun_light = local_light(pos=sun_marker.pos, color=color.white)
 sun_label = label(
     pos=sun_marker.pos + vector(0, -SUN_VISUAL_RADIUS_TRUE_SCALE * 1.15, 0),
     text=f"Sun | true distance 1 AU | true-size scaled radius {SUN_VISUAL_RADIUS_TRUE_SCALE:.1f} Earth radii",
@@ -720,7 +756,7 @@ moon_label = label(
     box=False,
     color=color.white,
 )
-moon_orbit_curve = curve(color=color.gray(0.38), radius=0.004)
+moon_orbit_curve = curve(color=color.gray(0.38), radius=MOON_ORBIT_LINE_VISUAL_RADIUS)
 for i in range(721):
     theta = 2.0 * pi * i / 720.0 + radians(MOON_INITIAL_PHASE_DEG)
     p = vector(MOON_SEMI_MAJOR_AXIS_M * cos(theta), MOON_SEMI_MAJOR_AXIS_M * sin(theta), 0)
@@ -730,10 +766,50 @@ for i in range(721):
 warning_label = label(pos=vector(0, 2.0, 0), text="", height=16, box=False, color=color.red)
 timer_label = label(pos=vector(-3.6, 3.0, 0), text="Visual Time: 0.0 s | Physical Time: 0 s", height=12, box=False, color=color.white)
 physics_label = label(pos=vector(-3.6, 2.78, 0), text="Physics: Earth J2 + drag + Sun/Moon third-body gravity, sensor fusion telemetry", height=10, box=False, color=color.cyan)
-command_label = label(pos=vector(-3.6, 2.58, 0), text="Command input: waiting for quantum_commands.json", height=10, box=False, color=color.green)
+command_label = label(pos=vector(-3.6, 2.58, 0), text="External quantum command input: OFF | using built-in VPython controls", height=10, box=False, color=color.green)
 telemetry_label = label(pos=vector(-3.6, 2.40, 0), text="Telemetry outbox: ready_to_send_telemetry, 10 Hz | speed 1x", height=10, box=False, color=color.white)
 selected_label = label(pos=vector(0, 2.35, 0), text="Selected data satellite: none", height=12, box=False, color=color.yellow)
 summary_label = label(pos=vector(0, -2.35, 0), text="", height=12, box=True, border=8, opacity=0.18, color=color.white)
+
+
+# Compact visual dashboard. This is visual-only and does not affect physics.
+dashboard_label = label(
+    pos=vector(3.45, 3.0, 0),
+    text="Dashboard loading...",
+    height=10,
+    box=True,
+    border=8,
+    opacity=0.16,
+    color=color.white,
+)
+
+last_dashboard_rf_count = 0
+last_dashboard_solar_storm_active = False
+
+
+def update_dashboard_text(visual_time_s, physical_time_s, rf_count=None, solar_storm_active=None):
+    global last_dashboard_rf_count, last_dashboard_solar_storm_active
+    if rf_count is not None:
+        last_dashboard_rf_count = int(rf_count)
+    if solar_storm_active is not None:
+        last_dashboard_solar_storm_active = bool(solar_storm_active)
+    active_sats = sum(1 for s in satellites if s.get("active", False)) if "satellites" in globals() else 0
+    active_asts = sum(1 for a in asteroids if a.get("active", False)) if "asteroids" in globals() else 0
+    active_deb = sum(1 for d in debris_particles if d.get("active", False)) if "debris_particles" in globals() else 0
+    tcad_status = "loaded" if ("tcad_lookup" in globals() and tcad_lookup is not None and getattr(tcad_lookup, "enabled", False)) else "fallback/off"
+    dashboard_label.text = (
+        "SIM DASHBOARD\n"
+        f"Visual time: {visual_time_s:.1f} s\n"
+        f"Physical time: {physical_time_s:.0f} s\n"
+        f"Speed: {simulation_speed_multiplier}x\n"
+        f"Satellites active: {active_sats}\n"
+        f"Asteroids active: {active_asts}\n"
+        f"Debris active: {active_deb}\n"
+        f"RF detections: {last_dashboard_rf_count}\n"
+        f"Solar storm: {'ACTIVE' if last_dashboard_solar_storm_active else 'quiet'}\n"
+        f"TCAD: {tcad_status}"
+    )
+
 
 # -----------------------------
 # Cursor-centered zoom + views
@@ -875,6 +951,16 @@ def fast_forward_simulation(button_event=None):
     set_simulation_speed(SIMULATION_SPEED_OPTIONS[simulation_speed_index])
 
 
+def toggle_rf_detection_lines(button_event=None):
+    global SHOW_RF_DETECTION_LINES
+    SHOW_RF_DETECTION_LINES = not SHOW_RF_DETECTION_LINES
+    if not SHOW_RF_DETECTION_LINES:
+        clear_rf_detection_visuals()
+        set_control_status("RF detection lines hidden | simulation running smoother", color.cyan)
+    else:
+        set_control_status("RF detection lines visible | may be slower with many detections", color.yellow)
+
+
 def start_simulation(button_event=None):
     global simulation_running
     if simulation_ended:
@@ -982,6 +1068,8 @@ button(text="Stop", bind=stop_simulation)
 scene.append_to_caption("  ")
 button(text="Fast Forward", bind=fast_forward_simulation)
 scene.append_to_caption("  ")
+button(text="Toggle RF Lines", bind=toggle_rf_detection_lines)
+scene.append_to_caption("  ")
 button(text="End + Summary", bind=end_simulation)
 scene.append_to_caption("\nView controls: ")
 button(text="Earth View", bind=focus_earth_view)
@@ -995,7 +1083,7 @@ scene.append_to_caption("  ")
 button(text="Earth + Moon View", bind=focus_earth_moon_view)
 scene.append_to_caption("  ")
 button(text="Default View", bind=focus_default_view)
-scene.append_to_caption("\nMars, Mars satellites, Mars asteroids, and spacecraft transfer mission are removed. Moon orbit and Moon gravity are included. Scroll over an object to zoom toward your cursor.\n")
+scene.append_to_caption("\nMars, Mars satellites, Mars asteroids, and spacecraft transfer mission are removed. Moon orbit and Moon gravity are included. External quantum_commands.json input is disabled. Scroll over an object to zoom toward your cursor.\n")
 
 # -----------------------------
 # Gravity / drag physics
@@ -1081,7 +1169,7 @@ def draw_circular_orbit(altitude, orbit_color, inclination_deg=0, raan_deg=0):
         p = rotate(p, angle=radians(inclination_deg), axis=vector(1, 0, 0))
         p = rotate(p, angle=radians(raan_deg), axis=vector(0, 0, 1))
         points.append(meters_to_scene(p))
-    return curve(pos=points, color=orbit_color, radius=0.006)
+    return curve(pos=points, color=orbit_color, radius=ORBIT_LINE_VISUAL_RADIUS)
 
 
 def make_elliptical_orbit_state(perigee_altitude, apogee_altitude, inclination_deg=63.4, raan_deg=0, argument_of_perigee_deg=270, true_anomaly_deg=0, prograde=True):
@@ -1121,7 +1209,7 @@ def draw_elliptical_orbit(perigee_altitude, apogee_altitude, orbit_color, inclin
         pos = rotate(pos, angle=radians(inclination_deg), axis=vector(1, 0, 0))
         pos = rotate(pos, angle=radians(raan_deg), axis=vector(0, 0, 1))
         points.append(meters_to_scene(pos))
-    return curve(pos=points, color=orbit_color, radius=0.006)
+    return curve(pos=points, color=orbit_color, radius=ORBIT_LINE_VISUAL_RADIUS)
 
 # -----------------------------
 # Commands
@@ -1133,22 +1221,15 @@ target_label = None
 
 
 def create_sample_command_file_if_missing():
-    if os.path.exists(COMMAND_FILE):
-        return
-    sample = {
-        "selected_satellite": "SAT-3",
-        "data_collection_target": {"name": "Nashville target", "lat_deg": 36.1627, "lon_deg": -86.7816},
-        "maneuvers": [{"satellite": "SAT-2", "type": "radial_out", "delta_v_mps": 0}],
-        "attitude_commands": [
-            {"satellite": "SAT-2", "roll_deg": 0, "pitch_deg": 0, "yaw_deg": 0, "panel_rotation_deg": 0}
-        ],
-    }
-    try:
-        with open(COMMAND_FILE, "w") as f:
-            json.dump(sample, f, indent=2)
-    except Exception:
-        pass
+    # Disabled in this version. Keep this function as a no-op so older helper code stays safe.
+    return
 
+
+def check_for_command_update(satellites):
+    # Disabled in this version. The sim uses only the terminal setup and VPython buttons.
+    command_label.text = "External quantum command input: OFF | using built-in VPython controls"
+    command_label.color = color.green
+    return
 
 def lat_lon_to_position(lat_deg, lon_deg, physical_time_s=0.0, include_earth_rotation=True):
     lat = radians(lat_deg)
@@ -1290,39 +1371,24 @@ def apply_command_data(command_data, satellites):
                 warning_label.pos = sat["marker"].pos + vector(0, 0.5, 0)
 
 
-def check_for_command_update(satellites):
-    global last_command_mtime, last_command_text
-    create_sample_command_file_if_missing()
-    if not os.path.exists(COMMAND_FILE):
-        command_label.text = "Command input: no command file found"
-        return
-    try:
-        mtime = os.path.getmtime(COMMAND_FILE)
-        if last_command_mtime is not None and mtime == last_command_mtime:
-            return
-        with open(COMMAND_FILE, "r") as f:
-            text = f.read()
-        if text.strip() == "" or text == last_command_text:
-            last_command_mtime = mtime
-            return
-        data = json.loads(text)
-        apply_command_data(data, satellites)
-        last_command_mtime = mtime
-        last_command_text = text
-        command_label.text = "Command input: live update applied"
-    except Exception as e:
-        command_label.text = f"Command input: JSON error or unreadable file ({e})"
-
 # -----------------------------
 # Satellite / asteroid creation
 # -----------------------------
 def create_satellite_from_state(name, position_m, velocity_mps, sat_color, trail_color, orbit_class="custom", orbit_description="custom orbit"):
-    marker = sphere(pos=meters_to_scene(position_m), radius=0.045, color=sat_color, make_trail=True, trail_color=trail_color, retain=1800)
-    marker.trail_radius = 0.006
-    body = box(pos=marker.pos, length=0.13, height=0.055, width=0.055, color=color.white)
-    panel_left = box(pos=marker.pos + vector(0, 0.09, 0), length=0.22, height=0.018, width=0.006, color=vector(0.03, 0.10, 0.40))
-    panel_right = box(pos=marker.pos + vector(0, -0.09, 0), length=0.22, height=0.018, width=0.006, color=vector(0.03, 0.10, 0.40))
-    sat_label = label(pos=marker.pos + vector(0.13, 0.13, 0), text=name, height=11, box=False, color=sat_color)
+    marker = sphere(pos=meters_to_scene(position_m), radius=0.058, color=sat_color, make_trail=True, trail_color=trail_color, retain=2200)
+    marker.trail_radius = 0.008
+    body = box(pos=marker.pos, length=0.13 * SATELLITE_BODY_SCALE_MULTIPLIER, height=0.055 * SATELLITE_BODY_SCALE_MULTIPLIER, width=0.055 * SATELLITE_BODY_SCALE_MULTIPLIER, color=color.white)
+    panel_left = box(pos=marker.pos + vector(0, 0.105, 0), length=0.25, height=0.020, width=0.007, color=vector(0.03, 0.10, 0.40))
+    panel_right = box(pos=marker.pos + vector(0, -0.105, 0), length=0.25, height=0.020, width=0.007, color=vector(0.03, 0.10, 0.40))
+    sensor_beam = cone(
+        pos=marker.pos,
+        axis=norm(earth.pos - marker.pos) * SENSOR_BEAM_VISUAL_LENGTH if mag(earth.pos - marker.pos) > 0 else vector(0, -SENSOR_BEAM_VISUAL_LENGTH, 0),
+        radius=SENSOR_BEAM_VISUAL_RADIUS,
+        color=sat_color,
+        opacity=SENSOR_BEAM_DEFAULT_OPACITY,
+        visible=SHOW_SENSOR_BEAMS,
+    )
+    sat_label = label(pos=marker.pos + vector(0.15, 0.15, 0), text=f"{name} | {orbit_class}", height=11, box=False, color=sat_color)
     sat = {
         "name": name,
         "position_m": position_m,
@@ -1331,6 +1397,7 @@ def create_satellite_from_state(name, position_m, velocity_mps, sat_color, trail
         "body": body,
         "panel_left": panel_left,
         "panel_right": panel_right,
+        "sensor_beam": sensor_beam,
         "label": sat_label,
         "active": True,
         "base_color": sat_color,
@@ -1365,7 +1432,7 @@ def hide_satellite(sat):
     sat["active"] = False
     sat["marker"].make_trail = False
     sat["marker"].clear_trail()
-    for key in ["marker", "body", "panel_left", "panel_right", "label"]:
+    for key in ["marker", "body", "panel_left", "panel_right", "sensor_beam", "label"]:
         sat[key].visible = False
 
 
@@ -1385,17 +1452,23 @@ def update_satellite_visuals(sat):
     p = meters_to_scene(sat["position_m"])
     sat["marker"].pos = p
     sat["body"].pos = p
-    sat["panel_left"].pos = p + vector(0, 0.09, 0)
-    sat["panel_right"].pos = p + vector(0, -0.09, 0)
-    sat["label"].pos = p + vector(0.13, 0.13, 0)
+    sat["panel_left"].pos = p + vector(0, 0.105, 0)
+    sat["panel_right"].pos = p + vector(0, -0.105, 0)
+    if sat.get("sensor_beam") is not None:
+        beam_dir = earth.pos - p
+        sat["sensor_beam"].pos = p
+        sat["sensor_beam"].axis = norm(beam_dir) * SENSOR_BEAM_VISUAL_LENGTH if mag(beam_dir) > 0 else vector(0, -SENSOR_BEAM_VISUAL_LENGTH, 0)
+        sat["sensor_beam"].color = sat["marker"].color
+        sat["sensor_beam"].visible = SHOW_SENSOR_BEAMS and sat.get("active", False)
+    sat["label"].pos = p + vector(0.15, 0.15, 0)
     sat["body"].rotate(angle=0.01, axis=vector(0, 1, 0), origin=p)
     sat["panel_left"].rotate(angle=0.01, axis=vector(0, 1, 0), origin=p)
     sat["panel_right"].rotate(angle=0.01, axis=vector(0, 1, 0), origin=p)
 
 
 def create_asteroid_from_state(name, position_m, velocity_mps, orbit_class, orbit_description, asteroid_color=color.red):
-    marker = sphere(pos=meters_to_scene(position_m), radius=0.075, color=asteroid_color, emissive=True, make_trail=True, trail_color=asteroid_color, retain=600)
-    marker.trail_radius = 0.006
+    marker = sphere(pos=meters_to_scene(position_m), radius=0.09, color=asteroid_color, emissive=True, make_trail=True, trail_color=asteroid_color, retain=850)
+    marker.trail_radius = 0.009
     asteroid_label = label(pos=marker.pos + vector(0.14, 0.14, 0), text=name, height=11, box=False, color=asteroid_color)
     return {
         "name": name,
@@ -1845,7 +1918,41 @@ def build_passive_rf_detections(satellites, asteroids, debris_particles, measure
     return detections
 
 
+rf_detection_visuals = []
+
+
+def clear_rf_detection_visuals():
+    global rf_detection_visuals
+    for visual in rf_detection_visuals:
+        try:
+            visual["line"].visible = False
+        except Exception:
+            pass
+    rf_detection_visuals = []
+
+
+def update_rf_detection_visuals(detections):
+    if not SHOW_RF_DETECTION_LINES:
+        clear_rf_detection_visuals()
+        return
+    clear_rf_detection_visuals()
+    threat_colors = {"critical": color.red, "high": color.orange, "medium": color.yellow, "low": color.cyan}
+    for detection in detections[:MAX_RF_DETECTION_VISUAL_LINES]:
+        sensor_sat = next((s for s in satellites if s.get("active", False) and s.get("name") == detection.get("sensor_id")), None)
+        if sensor_sat is None:
+            continue
+        est_pos = detection.get("estimated_position_m_eci", {})
+        if not all(k in est_pos for k in ["x", "y", "z"]):
+            continue
+        start = sensor_sat["marker"].pos
+        end = meters_to_scene(vector(est_pos["x"], est_pos["y"], est_pos["z"]))
+        line_color = threat_colors.get(detection.get("threat_level", "low"), color.cyan)
+        line = curve(pos=[start, end], color=line_color, radius=0.006)
+        rf_detection_visuals.append({"line": line, "life": RF_DETECTION_LINE_RETAIN_FRAMES})
+
+
 def update_rf_sensor_visual_highlights(detections):
+    update_rf_detection_visuals(detections)
     if not SHOW_RF_SENSOR_HIGHLIGHT:
         return
     detecting_ids = set(d["sensor_id"] for d in detections)
@@ -3188,7 +3295,7 @@ def build_telemetry_payload(frame_count_value, visual_time_s, physical_time_s, s
             "lat_deg": None if active_data_target is None else float(active_data_target.get("lat_deg", 0.0)),
             "lon_deg": None if active_data_target is None else float(active_data_target.get("lon_deg", 0.0)),
             "position_m_eci": None if active_data_target is None else vector_to_dict(target_surface_position_m(active_data_target, physical_time_s)),
-            "source": "terminal_input_or_quantum_commands_json",
+            "source": "terminal_input_only_quantum_commands_disabled",
         },
         "solar_environment": build_solar_environment_payload(physical_time_s),
         "lunar_environment": build_lunar_environment_payload(physical_time_s),
@@ -3266,6 +3373,15 @@ def write_live_telemetry_json(payload):
 def export_telemetry(frame_count_value, visual_time_s, physical_time_s, satellites, asteroids, debris_particles):
     payload = build_telemetry_payload(frame_count_value, visual_time_s, physical_time_s, satellites, asteroids, debris_particles)
     update_rf_sensor_visual_highlights(payload.get("passive_rf_detections", []))
+    try:
+        update_dashboard_text(
+            payload.get("visual_time_s", visual_time_s),
+            payload.get("physical_time_s", physical_time_s),
+            payload.get("counts", {}).get("passive_rf_detections", 0),
+            payload.get("counts", {}).get("solar_storm_active", False),
+        )
+    except Exception:
+        pass
     if TELEMETRY_OUTPUT_MODE == "mqtt_outbox":
         try:
             output_path = write_telemetry_snapshot_for_mqtt(payload)
@@ -3392,7 +3508,13 @@ print(f"Telemetry snapshots will be queued in '{MQTT_TELEMETRY_OUTPUT_DIR}' at {
 initialize_tcad_lookup_runtime()
 
 # Initial telemetry snapshot
-export_telemetry(0, 0.0, 0.0, satellites, asteroids, debris_particles)
+try:
+    export_telemetry(0, 0.0, 0.0, satellites, asteroids, debris_particles)
+except Exception as e:
+    print(f"Initial telemetry export skipped because of error: {e}")
+    telemetry_label.text = "Initial telemetry skipped; simulation still running"
+    telemetry_label.color = color.yellow
+set_control_status(f"Simulation running | {speed_status_text()}", color.green)
 
 # -----------------------------
 # Main loop
@@ -3412,18 +3534,16 @@ while True:
 
     # Update true-distance Sun marker and label based on Earth orbital path.
     sun_marker.pos = meters_to_scene(current_sun_position_eci_m(physical_time))
+    sun_glow.pos = sun_marker.pos
+    sun_light.pos = sun_marker.pos
     sun_label.pos = sun_marker.pos + vector(0, -SUN_VISUAL_RADIUS_TRUE_SCALE * 1.15, 0)
     moon_marker.pos = meters_to_scene(current_moon_position_eci_m(physical_time))
     moon_label.pos = moon_marker.pos + vector(0.16, 0.16, 0)
     refresh_data_target_marker(physical_time)
 
     timer_label.text = f"Visual Time: {visual_time:.1f} s | Physical Time: {physical_time:.0f} s | Speed: {simulation_speed_multiplier}x"
-
-    if frame_count % COMMAND_CHECK_INTERVAL_FRAMES == 0:
-        check_for_command_update(satellites)
-
-    if frame_count % telemetry_export_interval_frames() == 0:
-        export_telemetry(frame_count, visual_time, physical_time, satellites, asteroids, debris_particles)
+    if frame_count % 15 == 0:
+        update_dashboard_text(visual_time, physical_time)
 
     for sat in satellites:
         update_satellite_physics(sat)
@@ -3435,6 +3555,16 @@ while True:
 
     for debris in debris_particles:
         update_debris_particle(debris)
+
+    # External quantum command file intake is disabled in this version.
+
+    if frame_count % telemetry_export_interval_frames() == 0:
+        try:
+            export_telemetry(frame_count, visual_time, physical_time, satellites, asteroids, debris_particles)
+        except Exception as e:
+            telemetry_label.text = f"Telemetry export skipped: {e}"
+            telemetry_label.color = color.red
+            print(f"Telemetry export skipped at frame {frame_count}: {e}")
 
     handle_debris_debris_collisions()
 
@@ -3511,3 +3641,4 @@ while True:
             warning_label.pos = vector(0, 2.0, 0)
 
     earth.rotate(angle=EARTH_ROTATION_RATE * dt * 0.08, axis=vector(0, 0, 1))
+    earth_atmosphere.pos = earth.pos
