@@ -8,6 +8,16 @@ from datetime import datetime
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
+## Wipe before hand so that no manual cleaning
+def clear_directories():
+    for directory in [SAVE_DIR, OUTPUT_DIR]:  # GSM uses these two
+        for filename in os.listdir(directory):
+            if filename.endswith(".json"):
+                filepath = os.path.join(directory, filename)
+                os.remove(filepath)
+                print(f"[startup] cleared: {filepath}")
+    print("[startup] all directories cleared, starting fresh")
+
 BROKER_IP = ""  # fill in
 TOPIC_TELEMETRY = "satellite/telemetry"
 TOPIC_THRUSTER = "satellite/thruster"
@@ -18,6 +28,8 @@ MAX_AGE_SECONDS = 180
 
 os.makedirs(SAVE_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+clear_directories()
 
 if not BROKER_IP:
     raise ValueError("Set BROKER_IP before running")
