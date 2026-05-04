@@ -1,0 +1,7 @@
+tcad/tcad_lookup_table.json
+tcad/tcad_lookup_table.json.tmp
+tcad/tcad_lookup_table.json.sqlite
+tcad/output/tcad_generation_log.json
+ready_to_send_telemetry/
+*.tmp
+
