@@ -1374,7 +1374,7 @@ def apply_command_data(command_data, satellites):
 # -----------------------------
 # Satellite / asteroid creation
 # -----------------------------
-def create_satellite_from_state(name, position_m, velocity_mps, sat_color, trail_color, orbit_class="custom", orbit_description="custom orbit"):
+def create_satellite_from_state(name, position_m, velocity_mps, sat_color, trail_color, orbit_class="custom", orbit_description="custom orbit", source_record=None, object_id=None, display_name=None):
     marker = sphere(pos=meters_to_scene(position_m), radius=0.058, color=sat_color, make_trail=True, trail_color=trail_color, retain=2200)
     marker.trail_radius = 0.008
     body = box(pos=marker.pos, length=0.13 * SATELLITE_BODY_SCALE_MULTIPLIER, height=0.055 * SATELLITE_BODY_SCALE_MULTIPLIER, width=0.055 * SATELLITE_BODY_SCALE_MULTIPLIER, color=color.white)
@@ -1388,9 +1388,13 @@ def create_satellite_from_state(name, position_m, velocity_mps, sat_color, trail
         opacity=SENSOR_BEAM_DEFAULT_OPACITY,
         visible=SHOW_SENSOR_BEAMS,
     )
-    sat_label = label(pos=marker.pos + vector(0.15, 0.15, 0), text=f"{name} | {orbit_class}", height=11, box=False, color=sat_color)
+    label_text = display_name if display_name is not None else name
+    sat_label = label(pos=marker.pos + vector(0.15, 0.15, 0), text=f"{label_text} | {orbit_class}", height=11, box=False, color=sat_color)
     sat = {
         "name": name,
+        "object_id": object_id if object_id is not None else name,
+        "catalog_name": display_name if display_name is not None else name,
+        "source_record": source_record,
         "position_m": position_m,
         "velocity_mps": velocity_mps,
         "marker": marker,
@@ -1409,6 +1413,20 @@ def create_satellite_from_state(name, position_m, velocity_mps, sat_color, trail
         "central_body": "Earth",
         "shielding_mm_al": DEFAULT_SATELLITE_SHIELDING_MM_AL,
     }
+    if source_record is not None:
+        sat["norad_cat_id"] = source_record.get("norad_cat_id")
+        sat["json_object_id"] = source_record.get("object_id")
+        sat["json_name"] = source_record.get("name")
+        sat["mass_kg"] = float(source_record.get("mass_kg", sat["mass_kg"]) or sat["mass_kg"])
+        sat["mass_source"] = source_record.get("mass_source")
+        sat["mass_confidence"] = source_record.get("mass_confidence")
+        sat["orbit_elements"] = source_record.get("orbit_elements")
+        sat["raw_celestrak_gp"] = source_record.get("raw_celestrak_gp")
+        sat["ucs_metadata"] = source_record.get("ucs_metadata")
+        sat["purpose"] = source_record.get("purpose")
+        sat["users"] = source_record.get("users")
+        sat["operator_owner"] = source_record.get("operator_owner")
+        sat["country_of_operator_owner"] = source_record.get("country_of_operator_owner")
     ensure_satellite_state_defaults(sat)
     return sat
 
@@ -1466,12 +1484,17 @@ def update_satellite_visuals(sat):
     sat["panel_right"].rotate(angle=0.01, axis=vector(0, 1, 0), origin=p)
 
 
-def create_asteroid_from_state(name, position_m, velocity_mps, orbit_class, orbit_description, asteroid_color=color.red):
+def create_asteroid_from_state(name, position_m, velocity_mps, orbit_class, orbit_description, asteroid_color=color.red, source_record=None, object_id=None, display_name=None, object_type="asteroid"):
     marker = sphere(pos=meters_to_scene(position_m), radius=0.09, color=asteroid_color, emissive=True, make_trail=True, trail_color=asteroid_color, retain=850)
     marker.trail_radius = 0.009
-    asteroid_label = label(pos=marker.pos + vector(0.14, 0.14, 0), text=name, height=11, box=False, color=asteroid_color)
-    return {
+    label_text = display_name if display_name is not None else name
+    asteroid_label = label(pos=marker.pos + vector(0.14, 0.14, 0), text=label_text, height=11, box=False, color=asteroid_color)
+    hazard = {
         "name": name,
+        "object_id": object_id if object_id is not None else name,
+        "catalog_name": display_name if display_name is not None else name,
+        "source_record": source_record,
+        "object_type": object_type,
         "position_m": position_m,
         "velocity_mps": velocity_mps,
         "marker": marker,
@@ -1484,47 +1507,22 @@ def create_asteroid_from_state(name, position_m, velocity_mps, orbit_class, orbi
         "central_body": "Earth",
         "shielding_mm_al": DEFAULT_ASTEROID_SHIELDING_MM_AL,
     }
-
-
-def create_physical_asteroid(target_sat, target_collision_visual_time, name="AST-1"):
-    target_position_m = target_sat["position_m"]
-    target_velocity_mps = target_sat["velocity_mps"]
-    target_radius_m = mag(target_position_m)
-    target_speed_mps = circular_speed(target_radius_m)
-    omega_rad_per_s = target_speed_mps / target_radius_m
-    target_physical_time = target_collision_visual_time * rate_value * BASE_DT
-    separation_angle = (2.0 * omega_rad_per_s * target_physical_time) % (2.0 * pi)
-    orbit_normal = cross(target_position_m, target_velocity_mps)
-    orbit_normal = norm(orbit_normal) if mag(orbit_normal) > 0 else vector(0, 0, 1)
-    asteroid_position_m = rotate(target_position_m, angle=separation_angle, axis=orbit_normal)
-    prograde_dir = cross(orbit_normal, norm(asteroid_position_m))
-    prograde_dir = norm(prograde_dir) if mag(prograde_dir) > 0 else perpendicular_velocity_dir(asteroid_position_m, target_velocity_mps)
-    asteroid_velocity_mps = -prograde_dir * target_speed_mps
-    asteroid = create_asteroid_from_state(
-        name, asteroid_position_m, asteroid_velocity_mps, target_sat.get("orbit_class", "LEO"),
-        f"guaranteed retrograde collision-course orbit targeting {target_sat['name']}; predicted impact in about {target_collision_visual_time:.1f} visual seconds",
-        color.red,
-    )
-    asteroid["target_satellite"] = target_sat["name"]
-    asteroid["predicted_collision_visual_time_s"] = target_collision_visual_time
-    asteroid["predicted_collision_physical_time_s"] = target_physical_time
-    asteroid["guaranteed_collision_course"] = True
-    print(f"{name} placed on guaranteed collision course with {target_sat['name']} in about {target_collision_visual_time:.1f} visual seconds.")
-    return asteroid
-
-
-def create_circular_asteroid(name, altitude, inclination_deg, raan_deg, phase_deg, orbit_class, prograde=False):
-    pos, vel = make_orbit_state(altitude, inclination_deg, raan_deg, phase_deg, prograde)
-    return create_asteroid_from_state(name, pos, vel, orbit_class, f"{orbit_class} circular asteroid orbit, altitude {altitude / 1000.0:.0f} km", color.red)
-
-
-def create_heo_asteroid(name, perigee_altitude, apogee_altitude, inclination_deg, raan_deg, argument_of_perigee_deg, true_anomaly_deg, prograde=False):
-    pos, vel = make_elliptical_orbit_state(perigee_altitude, apogee_altitude, inclination_deg, raan_deg, argument_of_perigee_deg, true_anomaly_deg, prograde)
-    return create_asteroid_from_state(
-        name, pos, vel, "HEO",
-        f"HEO elliptical asteroid orbit, perigee {perigee_altitude / 1000.0:.0f} km, apogee {apogee_altitude / 1000.0:.0f} km",
-        color.red,
-    )
+    if source_record is not None:
+        hazard["norad_cat_id"] = source_record.get("norad_cat_id")
+        hazard["json_object_id"] = source_record.get("object_id")
+        hazard["json_name"] = source_record.get("name")
+        hazard["mass_kg"] = float(source_record.get("mass_kg", hazard["mass_kg"]) or hazard["mass_kg"])
+        hazard["mass_source"] = source_record.get("mass_source")
+        hazard["mass_confidence"] = source_record.get("mass_confidence")
+        hazard["mass_estimation_method"] = source_record.get("mass_estimation_method")
+        hazard["estimated_area_to_mass_m2_per_kg"] = source_record.get("estimated_area_to_mass_m2_per_kg")
+        hazard["estimated_cross_section_area_m2"] = source_record.get("estimated_cross_section_area_m2")
+        if source_record.get("estimated_cross_section_area_m2"):
+            hazard["drag_area_m2"] = float(source_record["estimated_cross_section_area_m2"])
+            hazard["physical_radius_m"] = max(0.05, sqrt(float(source_record["estimated_cross_section_area_m2"]) / pi))
+        hazard["orbit_elements"] = source_record.get("orbit_elements")
+        hazard["raw_celestrak_gp"] = source_record.get("raw_celestrak_gp")
+    return hazard
 
 
 def hide_object(obj):
@@ -1557,17 +1555,141 @@ MAX_DEBRIS_PARTICLES = 180
 CATASTROPHIC_ENERGY_J_PER_KG = 40000.0
 debris_debris_collision_distance_m = 90000.0
 MAX_DEBRIS_DEBRIS_COLLISIONS_PER_FRAME = 2
+GENERATED_FRAGMENT_DENSITY_KG_M3 = 2700.0
+FRAGMENT_EVENT_COUNTER = 0
+COLLISION_EVENT_LOG = []
+MAX_COLLISION_EVENT_LOG = 250
 
 
-def random_debris_mass_kg():
-    return 0.25 + random() * 8.0
+def safe_object_identifier(obj, fallback="OBJECT"):
+    return str(obj.get("object_id") or obj.get("json_object_id") or obj.get("name") or fallback)
+
+
+def safe_object_display_name(obj, fallback="Object"):
+    return str(obj.get("catalog_name") or obj.get("json_name") or obj.get("name") or safe_object_identifier(obj, fallback))
+
+
+def object_mass_kg(obj, fallback=1.0):
+    try:
+        value = float(obj.get("mass_kg", fallback))
+        if value > 0:
+            return value
+    except Exception:
+        pass
+    return float(fallback)
+
+
+def allocate_fragment_masses(total_mass_kg, count):
+    """Return count positive fragment masses whose sum is exactly total_mass_kg.
+
+    The distribution is intentionally non-uniform: a few larger chunks plus many
+    small fragments. This keeps total mass conserved while looking more like a
+    breakup than identical marbles.
+    """
+    count = max(1, int(count))
+    total_mass_kg = max(0.001, float(total_mass_kg))
+    raw_weights = []
+    for i in range(count):
+        # Power-law-like weights: most fragments are small, some are large.
+        rank_factor = 1.0 / ((i + 1) ** 1.35)
+        jitter = 0.35 + random() * 1.30
+        raw_weights.append(rank_factor * jitter)
+    # Shuffle so the biggest chunks are not always the first visual particles.
+    for i in range(count - 1, 0, -1):
+        j = int(random() * (i + 1))
+        raw_weights[i], raw_weights[j] = raw_weights[j], raw_weights[i]
+    weight_sum = sum(raw_weights) or 1.0
+    masses = [total_mass_kg * w / weight_sum for w in raw_weights]
+    # Correct floating-point drift so the generated list exactly balances.
+    masses[-1] += total_mass_kg - sum(masses)
+    return masses
+
+
+def physical_radius_from_mass_kg(mass_kg):
+    # Spherical-equivalent aluminum/spacecraft-material chunk radius.
+    volume_m3 = max(1.0e-9, mass_kg / GENERATED_FRAGMENT_DENSITY_KG_M3)
+    return max(0.015, (3.0 * volume_m3 / (4.0 * pi)) ** (1.0 / 3.0))
+
+
+def drag_area_from_mass_kg(mass_kg):
+    radius_m = physical_radius_from_mass_kg(mass_kg)
+    return pi * radius_m ** 2
 
 
 def random_debris_radius_scene(mass_kg):
-    return 0.006 + min(0.010, 0.0015 * sqrt(mass_kg))
+    # Visual-only size. It is exaggerated so fragments can be seen in VPython.
+    return 0.006 + min(0.020, 0.0025 * sqrt(max(0.01, mass_kg)))
 
 
-def create_breakup_event(position_m, base_velocity_mps):
+def next_fragment_event_id(prefix="BREAKUP"):
+    global FRAGMENT_EVENT_COUNTER
+    FRAGMENT_EVENT_COUNTER += 1
+    return f"{prefix}-{FRAGMENT_EVENT_COUNTER:05d}"
+
+
+def remember_collision_event(event):
+    COLLISION_EVENT_LOG.append(event)
+    if len(COLLISION_EVENT_LOG) > MAX_COLLISION_EVENT_LOG:
+        del COLLISION_EVENT_LOG[0:len(COLLISION_EVENT_LOG) - MAX_COLLISION_EVENT_LOG]
+
+
+def make_generated_fragment_record(
+    marker,
+    position_m,
+    velocity_mps,
+    mass_kg,
+    physical_radius_m,
+    event_id,
+    fragment_index,
+    parent_objects,
+    created_by_collision_type,
+    life_frames=12000,
+    can_collide_after=8,
+    recent_collision_cooldown=0,
+):
+    parent_ids = [safe_object_identifier(obj) for obj in parent_objects if obj is not None]
+    parent_names = [safe_object_display_name(obj) for obj in parent_objects if obj is not None]
+    primary_parent_id = parent_ids[0] if parent_ids else "UNKNOWN"
+    primary_parent_name = parent_names[0] if parent_names else "UNKNOWN"
+    fragment_id = f"{primary_parent_id}-{event_id}-FRAG-{fragment_index:03d}"
+    fragment_name = f"{primary_parent_name} {event_id} FRAGMENT {fragment_index:03d}"
+    return {
+        "object_id": fragment_id,
+        "json_object_id": fragment_id,
+        "name": fragment_name,
+        "catalog_name": fragment_name,
+        "object_type": "generated_debris_fragment",
+        "source": "simulation_generated_breakup_fragment",
+        "generated_fragment": True,
+        "fragment_event_id": event_id,
+        "fragment_sequence_number": int(fragment_index),
+        "parent_object_ids": parent_ids,
+        "parent_names": parent_names,
+        "parent_object_id": primary_parent_id,
+        "parent_name": primary_parent_name,
+        "created_by_collision_type": created_by_collision_type,
+        "created_at_physical_time_s": float(simulation_physical_time) if "simulation_physical_time" in globals() else 0.0,
+        "created_at_frame": int(frame_count) if "frame_count" in globals() else 0,
+        "marker": marker,
+        "position_m": position_m,
+        "velocity_mps": velocity_mps,
+        "active": True,
+        "age": 0,
+        "life": int(life_frames),
+        "can_collide_after": int(can_collide_after),
+        "mass_kg": float(mass_kg),
+        "mass_source": "mass_conserved_from_collision_parents",
+        "mass_confidence": "simulation_conserved",
+        "physical_radius_m": float(physical_radius_m),
+        "drag_area_m2": float(pi * physical_radius_m ** 2),
+        "central_body": "Earth",
+        "shielding_mm_al": DEFAULT_DEBRIS_SHIELDING_MM_AL,
+        "recent_collision_cooldown": int(recent_collision_cooldown),
+        "visual_scale_note": "VPython marker size is exaggerated for visibility; physical_radius_m and drag_area_m2 are used for physics.",
+    }
+
+
+def create_breakup_event(position_m, base_velocity_mps, destroyed_object=None, impactor_object=None, fragment_count=INITIAL_BREAKUP_FRAGMENTS, event_prefix="BREAKUP"):
     visual_parts = []
     debris_parts = []
     scene_pos = meters_to_scene(position_m)
@@ -1575,35 +1697,71 @@ def create_breakup_event(position_m, base_velocity_mps):
     visual_parts.append({"obj": flash, "growth": 0.012, "shrink_factor": 0.93, "life": 18, "max_life": 18, "grow_for": 5, "start_opacity": 0.95})
     glow = sphere(pos=scene_pos, radius=0.08, color=color.orange, emissive=True, opacity=0.35)
     visual_parts.append({"obj": glow, "growth": 0.010, "shrink_factor": 0.94, "life": 26, "max_life": 26, "grow_for": 7, "start_opacity": 0.35})
-    for i in range(INITIAL_BREAKUP_FRAGMENTS):
+
+    parent_objects = [obj for obj in [destroyed_object, impactor_object] if obj is not None]
+    destroyed_mass = object_mass_kg(destroyed_object, 0.0) if destroyed_object is not None else 0.0
+    impactor_mass = object_mass_kg(impactor_object, 0.0) if impactor_object is not None else 0.0
+    total_fragment_mass_kg = destroyed_mass + impactor_mass
+    if total_fragment_mass_kg <= 0.0:
+        total_fragment_mass_kg = 1.0
+
+    # Respect the global particle cap. The sum of the created masses still equals
+    # the total parent mass represented by this event.
+    available_slots = max(1, MAX_DEBRIS_PARTICLES - len(debris_particles)) if "debris_particles" in globals() else int(fragment_count)
+    count = max(1, min(int(fragment_count), available_slots))
+    fragment_masses = allocate_fragment_masses(total_fragment_mass_kg, count)
+    event_id = next_fragment_event_id(event_prefix)
+
+    center_velocity = base_velocity_mps
+    if destroyed_object is not None and impactor_object is not None:
+        total_parent_mass = max(0.001, destroyed_mass + impactor_mass)
+        center_velocity = (destroyed_object["velocity_mps"] * destroyed_mass + impactor_object["velocity_mps"] * impactor_mass) / total_parent_mass
+
+    for i, mass_kg in enumerate(fragment_masses, start=1):
         direction = random_unit_vector()
         start_position_m = position_m + direction * (3000.0 + random() * 18000.0)
-        fragment_velocity_mps = base_velocity_mps + direction * (20.0 + random() * 130.0)
+        # Larger chunks generally leave a little slower; smaller fragments scatter faster.
+        mass_fraction = mass_kg / max(total_fragment_mass_kg, 0.001)
+        eject_speed = clamp_value(18.0 + random() * 150.0 / (1.0 + 8.0 * mass_fraction), 10.0, 180.0)
+        fragment_velocity_mps = center_velocity + direction * eject_speed
         frag_color = color.gray(0.8)
-        if i % 6 == 0:
+        if i % 6 == 1:
             frag_color = color.orange
-        elif i % 6 == 1:
-            frag_color = color.yellow
         elif i % 6 == 2:
-            frag_color = color.red
+            frag_color = color.yellow
         elif i % 6 == 3:
+            frag_color = color.red
+        elif i % 6 == 4:
             frag_color = color.white
-        mass_kg = random_debris_mass_kg()
+        physical_radius_m = physical_radius_from_mass_kg(mass_kg)
         marker = sphere(pos=meters_to_scene(start_position_m), radius=random_debris_radius_scene(mass_kg), color=frag_color, opacity=0.88, make_trail=False)
-        debris_parts.append({
-            "marker": marker,
-            "position_m": start_position_m,
-            "velocity_mps": fragment_velocity_mps,
-            "active": True,
-            "age": 0,
-            "life": 12000,
-            "can_collide_after": 8,
-            "mass_kg": mass_kg,
-            "physical_radius_m": 0.03 + min(0.20, 0.025 * sqrt(mass_kg)),
-            "central_body": "Earth",
-            "shielding_mm_al": DEFAULT_DEBRIS_SHIELDING_MM_AL,
-            "recent_collision_cooldown": 0,
-        })
+        debris_parts.append(make_generated_fragment_record(
+            marker=marker,
+            position_m=start_position_m,
+            velocity_mps=fragment_velocity_mps,
+            mass_kg=mass_kg,
+            physical_radius_m=physical_radius_m,
+            event_id=event_id,
+            fragment_index=i,
+            parent_objects=parent_objects,
+            created_by_collision_type="satellite_or_object_breakup",
+            life_frames=12000,
+            can_collide_after=8,
+            recent_collision_cooldown=0,
+        ))
+
+    remember_collision_event({
+        "event_id": event_id,
+        "event_type": "mass_conserved_breakup",
+        "created_at_physical_time_s": float(simulation_physical_time) if "simulation_physical_time" in globals() else 0.0,
+        "created_at_frame": int(frame_count) if "frame_count" in globals() else 0,
+        "parent_object_ids": [safe_object_identifier(obj) for obj in parent_objects],
+        "parent_names": [safe_object_display_name(obj) for obj in parent_objects],
+        "total_parent_mass_kg": float(total_fragment_mass_kg),
+        "generated_fragment_count": int(len(debris_parts)),
+        "generated_fragment_mass_sum_kg": float(sum(d["mass_kg"] for d in debris_parts)),
+        "mass_conservation_error_kg": float(total_fragment_mass_kg - sum(d["mass_kg"] for d in debris_parts)),
+    })
     return visual_parts, debris_parts
 
 
@@ -1648,35 +1806,73 @@ def update_debris_particle(debris):
         hide_debris(debris)
 
 
-def create_secondary_debris(position_m, center_velocity_mps, relative_speed_mps, parent_mass_kg):
+def create_secondary_debris(position_m, center_velocity_mps, relative_speed_mps, parent_mass_kg, parent_objects=None, event_id=None, total_mass_override_kg=None):
     new_parts = []
     if len(debris_particles) >= MAX_DEBRIS_PARTICLES:
         return new_parts
     count = int(SECONDARY_BREAKUP_MIN_FRAGMENTS + random() * (SECONDARY_BREAKUP_MAX_FRAGMENTS - SECONDARY_BREAKUP_MIN_FRAGMENTS + 1))
     count = min(count, MAX_DEBRIS_PARTICLES - len(debris_particles))
-    for i in range(count):
+    if count <= 0:
+        return new_parts
+    parent_objects = parent_objects or []
+    event_id = event_id or next_fragment_event_id("DEBRIS-DEBRIS")
+    total_mass = float(total_mass_override_kg) if total_mass_override_kg is not None else max(0.05, float(parent_mass_kg))
+    fragment_masses = allocate_fragment_masses(total_mass, count)
+    for i, mass_kg in enumerate(fragment_masses, start=1):
         direction = random_unit_vector()
-        eject_speed = min(250.0, 15.0 + random() * max(20.0, 0.025 * relative_speed_mps))
+        eject_speed = min(320.0, 15.0 + random() * max(20.0, 0.025 * relative_speed_mps))
         start_position_m = position_m + direction * (1000.0 + random() * 6000.0)
         fragment_velocity_mps = center_velocity_mps + direction * eject_speed
-        mass_kg = max(0.05, parent_mass_kg * (0.08 + random() * 0.18))
-        frag_color = color.orange if i == 0 else color.white if i == 1 else color.gray(0.75)
+        frag_color = color.orange if i == 1 else color.white if i == 2 else color.gray(0.75)
+        physical_radius_m = physical_radius_from_mass_kg(mass_kg)
         marker = sphere(pos=meters_to_scene(start_position_m), radius=random_debris_radius_scene(mass_kg), color=frag_color, opacity=0.82, make_trail=False)
-        new_parts.append({
-            "marker": marker,
-            "position_m": start_position_m,
-            "velocity_mps": fragment_velocity_mps,
-            "active": True,
-            "age": 0,
-            "life": 8000,
-            "can_collide_after": 10,
-            "mass_kg": mass_kg,
-            "physical_radius_m": 0.03 + min(0.20, 0.025 * sqrt(mass_kg)),
-            "central_body": "Earth",
-            "shielding_mm_al": DEFAULT_DEBRIS_SHIELDING_MM_AL,
-            "recent_collision_cooldown": 20,
-        })
+        new_parts.append(make_generated_fragment_record(
+            marker=marker,
+            position_m=start_position_m,
+            velocity_mps=fragment_velocity_mps,
+            mass_kg=mass_kg,
+            physical_radius_m=physical_radius_m,
+            event_id=event_id,
+            fragment_index=i,
+            parent_objects=parent_objects,
+            created_by_collision_type="debris_debris_fragmentation",
+            life_frames=8000,
+            can_collide_after=10,
+            recent_collision_cooldown=20,
+        ))
     return new_parts
+
+
+def hide_collision_object(obj):
+    if obj is None:
+        return
+    if obj.get("collision_source") == "catalog_hazard":
+        hide_object(obj)
+    else:
+        hide_debris(obj)
+
+
+def set_collision_cooldown(obj, frames=20):
+    if obj is not None:
+        obj["recent_collision_cooldown"] = int(frames)
+
+
+def object_can_debris_collide(obj):
+    if not obj.get("active", False):
+        return False
+    if obj.get("recent_collision_cooldown", 0) > 0:
+        return False
+    if obj.get("collision_source") == "generated_fragment":
+        return obj.get("age", 0) >= obj.get("can_collide_after", 0)
+    return True
+
+
+def combined_debris_collision_radius_m(d1, d2):
+    # Keep the existing demo-friendly floor, but let bigger fragments/catalog objects
+    # increase their physical interaction radius. Visual size is still separate.
+    r1 = float(d1.get("physical_radius_m", 0.05) or 0.05)
+    r2 = float(d2.get("physical_radius_m", 0.05) or 0.05)
+    return max(debris_debris_collision_distance_m, (r1 + r2) * 8.0)
 
 
 def deflect_debris_pair(d1, d2):
@@ -1707,49 +1903,106 @@ def deflect_debris_pair(d1, d2):
 def handle_debris_debris_collisions():
     created_parts = []
     collisions_this_frame = 0
-    active_debris = [d for d in debris_particles if d["active"]]
-    for i in range(len(active_debris)):
-        d1 = active_debris[i]
-        if not d1["active"] or d1["age"] < d1["can_collide_after"] or d1.get("recent_collision_cooldown", 0) > 0:
+
+    active_colliders = []
+    for d in debris_particles:
+        if d.get("active", False):
+            d["collision_source"] = "generated_fragment"
+            active_colliders.append(d)
+    # The old variable name is asteroids, but dataset-backed entries in this list
+    # are real catalog debris hazards. Include them in the debris-on-debris layer.
+    if "asteroids" in globals():
+        for hazard in asteroids:
+            if hazard.get("active", False) and hazard.get("dataset_backed_debris_hazard", False):
+                hazard["collision_source"] = "catalog_hazard"
+                hazard.setdefault("can_collide_after", 0)
+                hazard.setdefault("age", 999999)
+                hazard.setdefault("recent_collision_cooldown", 0)
+                active_colliders.append(hazard)
+
+    for i in range(len(active_colliders)):
+        d1 = active_colliders[i]
+        if not object_can_debris_collide(d1):
             continue
-        for j in range(i + 1, len(active_debris)):
-            d2 = active_debris[j]
-            if not d2["active"] or d2["age"] < d2["can_collide_after"] or d2.get("recent_collision_cooldown", 0) > 0:
+        for j in range(i + 1, len(active_colliders)):
+            d2 = active_colliders[j]
+            if not object_can_debris_collide(d2):
+                continue
+            # Avoid instantly colliding fragments from the same generated event.
+            if d1.get("fragment_event_id") is not None and d1.get("fragment_event_id") == d2.get("fragment_event_id"):
                 continue
             distance_m = mag(d1["position_m"] - d2["position_m"])
-            if distance_m >= debris_debris_collision_distance_m:
+            if distance_m >= combined_debris_collision_radius_m(d1, d2):
                 continue
+
             collision_pos_m = (d1["position_m"] + d2["position_m"]) / 2
             rel_speed = mag(d1["velocity_mps"] - d2["velocity_mps"])
-            m1 = d1.get("mass_kg", 1.0)
-            m2 = d2.get("mass_kg", 1.0)
-            smaller_mass = min(m1, m2)
-            reduced_mass = (m1 * m2) / (m1 + m2)
-            energy_per_smaller_mass = 0.5 * reduced_mass * rel_speed ** 2 / max(smaller_mass, 0.001)
+            m1 = object_mass_kg(d1, 1.0)
+            m2 = object_mass_kg(d2, 1.0)
+            total_mass = max(0.001, m1 + m2)
+            smaller_mass = max(0.001, min(m1, m2))
+            reduced_mass = (m1 * m2) / total_mass
+            energy_per_smaller_mass = 0.5 * reduced_mass * rel_speed ** 2 / smaller_mass
             catastrophic = energy_per_smaller_mass > CATASTROPHIC_ENERGY_J_PER_KG
-            if catastrophic and random() < 0.35 and len(debris_particles) + len(created_parts) < MAX_DEBRIS_PARTICLES:
-                center_velocity = (d1["velocity_mps"] * m1 + d2["velocity_mps"] * m2) / (m1 + m2)
-                if m1 <= m2:
-                    hide_debris(d1)
-                    d2["velocity_mps"] = center_velocity + random_unit_vector() * min(80.0, rel_speed * 0.01)
-                    d2["recent_collision_cooldown"] = 25
-                else:
-                    hide_debris(d2)
-                    d1["velocity_mps"] = center_velocity + random_unit_vector() * min(80.0, rel_speed * 0.01)
-                    d1["recent_collision_cooldown"] = 25
-                created_parts.extend(create_secondary_debris(collision_pos_m, center_velocity, rel_speed, smaller_mass))
-                warning_label.text = "DEBRIS-DEBRIS FRAGMENTATION"
+            center_velocity = (d1["velocity_mps"] * m1 + d2["velocity_mps"] * m2) / total_mass
+
+            # High-speed orbital debris collisions are usually destructive. Keep a
+            # deflection branch for slow glancing contacts, but fragmentation is now
+            # mass-conserving when it happens.
+            if catastrophic and len(debris_particles) + len(created_parts) < MAX_DEBRIS_PARTICLES:
+                event_id = next_fragment_event_id("DEBRIS-DEBRIS")
+                hide_collision_object(d1)
+                hide_collision_object(d2)
+                created = create_secondary_debris(
+                    collision_pos_m,
+                    center_velocity,
+                    rel_speed,
+                    smaller_mass,
+                    parent_objects=[d1, d2],
+                    event_id=event_id,
+                    total_mass_override_kg=total_mass,
+                )
+                created_parts.extend(created)
+                remember_collision_event({
+                    "event_id": event_id,
+                    "event_type": "debris_debris_mass_conserved_fragmentation",
+                    "created_at_physical_time_s": float(simulation_physical_time),
+                    "created_at_frame": int(frame_count),
+                    "parent_object_ids": [safe_object_identifier(d1), safe_object_identifier(d2)],
+                    "parent_names": [safe_object_display_name(d1), safe_object_display_name(d2)],
+                    "relative_speed_mps": float(rel_speed),
+                    "total_parent_mass_kg": float(total_mass),
+                    "generated_fragment_count": int(len(created)),
+                    "generated_fragment_mass_sum_kg": float(sum(part["mass_kg"] for part in created)),
+                    "mass_conservation_error_kg": float(total_mass - sum(part["mass_kg"] for part in created)),
+                    "energy_per_smaller_mass_j_per_kg": float(energy_per_smaller_mass),
+                })
+                warning_label.text = "DEBRIS-DEBRIS MASS-CONSERVED FRAGMENTATION"
                 warning_label.pos = meters_to_scene(collision_pos_m) + vector(0, 0.35, 0)
             else:
                 deflect_debris_pair(d1, d2)
+                set_collision_cooldown(d1, 20)
+                set_collision_cooldown(d2, 20)
+                remember_collision_event({
+                    "event_id": next_fragment_event_id("DEBRIS-DEFLECT"),
+                    "event_type": "debris_debris_deflection",
+                    "created_at_physical_time_s": float(simulation_physical_time),
+                    "created_at_frame": int(frame_count),
+                    "object_ids": [safe_object_identifier(d1), safe_object_identifier(d2)],
+                    "object_names": [safe_object_display_name(d1), safe_object_display_name(d2)],
+                    "relative_speed_mps": float(rel_speed),
+                    "energy_per_smaller_mass_j_per_kg": float(energy_per_smaller_mass),
+                })
                 warning_label.text = "DEBRIS-DEBRIS DEFLECTION"
                 warning_label.pos = meters_to_scene(collision_pos_m) + vector(0, 0.35, 0)
+
             collisions_this_frame += 1
             if collisions_this_frame >= MAX_DEBRIS_DEBRIS_COLLISIONS_PER_FRAME:
                 debris_particles.extend(created_parts)
                 return
             break
     debris_particles.extend(created_parts)
+
 
 # -----------------------------
 # RF helpers
@@ -1811,7 +2064,7 @@ def make_rf_target_objects(asteroids, debris_particles):
             targets.append({"id": ast["name"], "name": ast["name"], "type": "asteroid", "central_body": "Earth", "position_m": ast["position_m"], "velocity_mps": ast["velocity_mps"], "source": "asteroids"})
     active_debris = [d for d in debris_particles if d.get("active", False)]
     for idx, debris in enumerate(active_debris):
-        targets.append({"id": f"DEBRIS-{idx + 1:03d}", "name": f"DEBRIS-{idx + 1:03d}", "type": "debris", "central_body": "Earth", "position_m": debris["position_m"], "velocity_mps": debris["velocity_mps"], "source": "debris"})
+        targets.append({"id": debris.get("object_id", f"DEBRIS-{idx + 1:03d}"), "name": debris.get("catalog_name", debris.get("name", f"DEBRIS-{idx + 1:03d}")), "type": "debris", "central_body": "Earth", "position_m": debris["position_m"], "velocity_mps": debris["velocity_mps"], "source": "debris"})
     return targets
 
 
@@ -2246,7 +2499,7 @@ def build_radiation_environment_payload(frame_count_value, visual_time_s, physic
             monitored.append({"object_id": ast["name"], "object_type": "asteroid", "position_m": ast["position_m"], "velocity_mps": ast["velocity_mps"], "mass_kg": ast.get("mass_kg"), "shielding_mm_al": ast.get("shielding_mm_al", DEFAULT_ASTEROID_SHIELDING_MM_AL)})
     active_debris = [d for d in debris_particles if d.get("active", False)]
     for idx, debris in enumerate(active_debris):
-        monitored.append({"object_id": f"DEBRIS-{idx + 1:03d}", "object_type": "debris", "position_m": debris["position_m"], "velocity_mps": debris["velocity_mps"], "mass_kg": debris.get("mass_kg"), "shielding_mm_al": debris.get("shielding_mm_al", DEFAULT_DEBRIS_SHIELDING_MM_AL)})
+        monitored.append({"object_id": debris.get("object_id", f"DEBRIS-{idx + 1:03d}"), "object_type": debris.get("object_type", "debris"), "position_m": debris["position_m"], "velocity_mps": debris["velocity_mps"], "mass_kg": debris.get("mass_kg"), "shielding_mm_al": debris.get("shielding_mm_al", DEFAULT_DEBRIS_SHIELDING_MM_AL)})
     if radiation_last_update_physical_time_s is None:
         delta_days = 0.0
     else:
@@ -3144,7 +3397,7 @@ def build_telemetry_payload(frame_count_value, visual_time_s, physical_time_s, s
         sensor_fusion_state = build_sensor_fusion_state(sat, radiation_record, solar_panel_system, voltage_sensors, power_system, thermal_profile, communication_link, rf_for_sat, camera_sensor)
         apply_tcad_confidence_to_sensor_fusion(sensor_fusion_state, tcad_sensor_degradation)
         satellite_states.append(object_state_dict(
-            object_id=sat["name"],
+            object_id=sat.get("object_id", sat["name"]),
             object_type="satellite",
             active=sat["active"],
             position_m=sat["position_m"],
@@ -3156,9 +3409,22 @@ def build_telemetry_payload(frame_count_value, visual_time_s, physical_time_s, s
             extra={
                 "can_maneuver": bool(sat["active"]),
                 "destroyed": not bool(sat["active"]),
+                "name": sat.get("catalog_name", sat["name"]),
+                "catalog_name": sat.get("catalog_name", sat["name"]),
+                "json_object_id": sat.get("json_object_id", sat.get("object_id", sat["name"])),
+                "norad_cat_id": sat.get("norad_cat_id"),
+                "mass_source": sat.get("mass_source"),
+                "mass_confidence": sat.get("mass_confidence"),
+                "orbit_elements": sat.get("orbit_elements"),
+                "raw_celestrak_gp": sat.get("raw_celestrak_gp"),
+                "ucs_metadata": sat.get("ucs_metadata"),
+                "purpose": sat.get("purpose"),
+                "users": sat.get("users"),
+                "operator_owner": sat.get("operator_owner"),
+                "country_of_operator_owner": sat.get("country_of_operator_owner"),
                 "orbit_class": sat.get("orbit_class", "unknown"),
                 "orbit_description": sat.get("orbit_description", "unknown"),
-                "environment_vectors": build_environment_vectors_payload(sat["name"], "satellite", sat["position_m"], sat["velocity_mps"], physical_time_s),
+                "environment_vectors": build_environment_vectors_payload(sat.get("object_id", sat["name"]), "satellite", sat["position_m"], sat["velocity_mps"], physical_time_s),
                 "sunlight_state": build_sunlight_state_payload(sat["position_m"], current_sun_position_eci_m(physical_time_s)),
                 "attitude_state": attitude_payload,
                 "solar_panel_system": solar_panel_system,
@@ -3179,8 +3445,8 @@ def build_telemetry_payload(frame_count_value, visual_time_s, physical_time_s, s
     asteroid_states = []
     for ast in asteroids:
         asteroid_states.append(object_state_dict(
-            object_id=ast["name"],
-            object_type="asteroid",
+            object_id=ast.get("object_id", ast["name"]),
+            object_type=ast.get("object_type", "asteroid"),
             active=ast["active"],
             position_m=ast["position_m"],
             velocity_mps=ast["velocity_mps"],
@@ -3189,6 +3455,18 @@ def build_telemetry_payload(frame_count_value, visual_time_s, physical_time_s, s
             measurement_timestamp=measurement_timestamp,
             extra={
                 "collision_threat": bool(ast["active"]),
+                "name": ast.get("catalog_name", ast["name"]),
+                "catalog_name": ast.get("catalog_name", ast["name"]),
+                "json_object_id": ast.get("json_object_id", ast.get("object_id", ast["name"])),
+                "norad_cat_id": ast.get("norad_cat_id"),
+                "dataset_backed_debris_hazard": bool(ast.get("dataset_backed_debris_hazard", False)),
+                "mass_source": ast.get("mass_source"),
+                "mass_confidence": ast.get("mass_confidence"),
+                "mass_estimation_method": ast.get("mass_estimation_method"),
+                "estimated_area_to_mass_m2_per_kg": ast.get("estimated_area_to_mass_m2_per_kg"),
+                "estimated_cross_section_area_m2": ast.get("estimated_cross_section_area_m2"),
+                "orbit_elements": ast.get("orbit_elements"),
+                "raw_celestrak_gp": ast.get("raw_celestrak_gp"),
                 "orbit_class": ast.get("orbit_class", "unknown"),
                 "orbit_description": ast.get("orbit_description", "unknown"),
                 "radiation": radiation_exposure_by_id.get(ast["name"], None),
@@ -3197,7 +3475,7 @@ def build_telemetry_payload(frame_count_value, visual_time_s, physical_time_s, s
 
     debris_states = []
     for idx, debris in enumerate(active_debris):
-        did = f"DEBRIS-{idx + 1:03d}"
+        did = debris.get("object_id", f"DEBRIS-{idx + 1:03d}")
         debris_states.append(object_state_dict(
             object_id=did,
             object_type="debris",
@@ -3208,9 +3486,27 @@ def build_telemetry_payload(frame_count_value, visual_time_s, physical_time_s, s
             radius_m=debris.get("physical_radius_m"),
             measurement_timestamp=measurement_timestamp,
             extra={
+                "name": debris.get("catalog_name", did),
+                "catalog_name": debris.get("catalog_name", did),
+                "json_object_id": debris.get("json_object_id", did),
+                "norad_cat_id": debris.get("norad_cat_id"),
                 "age_frames": int(debris.get("age", 0)),
                 "life_frames_remaining": int(debris.get("life", 0)),
                 "recent_collision_cooldown_frames": int(debris.get("recent_collision_cooldown", 0)),
+                "generated_fragment": bool(debris.get("generated_fragment", False)),
+                "fragment_event_id": debris.get("fragment_event_id"),
+                "fragment_sequence_number": debris.get("fragment_sequence_number"),
+                "parent_object_id": debris.get("parent_object_id"),
+                "parent_name": debris.get("parent_name"),
+                "parent_object_ids": debris.get("parent_object_ids"),
+                "parent_names": debris.get("parent_names"),
+                "created_by_collision_type": debris.get("created_by_collision_type"),
+                "created_at_physical_time_s": debris.get("created_at_physical_time_s"),
+                "created_at_frame": debris.get("created_at_frame"),
+                "mass_source": debris.get("mass_source"),
+                "mass_confidence": debris.get("mass_confidence"),
+                "drag_area_m2": debris.get("drag_area_m2"),
+                "visual_scale_note": debris.get("visual_scale_note"),
                 "radiation": radiation_exposure_by_id.get(did, None),
             },
         ))
@@ -3227,6 +3523,17 @@ def build_telemetry_payload(frame_count_value, visual_time_s, physical_time_s, s
         "visual_time_s": float(visual_time_s),
         "physical_time_s": float(physical_time_s),
         "mars_removed": True,
+        "dataset_backed_characters": {
+            "enabled": bool(SATELLITE_DATASET is not None or DEBRIS_DATASET is not None),
+            "satellite_dataset_path": SATELLITE_DATASET_LOADED_PATH,
+            "debris_dataset_path": DEBRIS_DATASET_LOADED_PATH,
+            "satellite_ids_match_json_object_id": True,
+            "debris_hazard_ids_match_json_object_id": True,
+            "catalog_names_match_json_name_field": True,
+            "generated_fragments_have_unique_ids": True,
+            "generated_fragment_masses_are_conserved_per_collision_event": True,
+            "debris_debris_collision_layer_enabled": True,
+        },
         "units": {"position": "meters, Earth-centered inertial demo frame", "velocity": "meters per second", "mass": "kilograms", "radius": "meters", "time": "seconds", "timestamp": "UTC ISO-8601 and Unix seconds"},
         "constants": {
             "earth_mu_m3_s2": MU_EARTH,
@@ -3275,6 +3582,8 @@ def build_telemetry_payload(frame_count_value, visual_time_s, physical_time_s, s
             "active_satellites": sum(1 for sat in satellites if sat["active"]),
             "active_asteroids": sum(1 for obj in asteroid_states if obj["active"]),
             "active_debris": len(debris_states),
+            "active_generated_fragments": sum(1 for d in debris_states if d.get("generated_fragment")),
+            "recent_collision_events_logged": len(COLLISION_EVENT_LOG),
             "total_hazards": len([obj for obj in all_hazards if obj["active"]]),
             "passive_rf_detections": len(passive_rf_detections),
             "critical_rf_detections": sum(1 for d in passive_rf_detections if d.get("threat_level") == "critical"),
@@ -3297,6 +3606,7 @@ def build_telemetry_payload(frame_count_value, visual_time_s, physical_time_s, s
             "position_m_eci": None if active_data_target is None else vector_to_dict(target_surface_position_m(active_data_target, physical_time_s)),
             "source": "terminal_input_only_quantum_commands_disabled",
         },
+        "recent_collision_events": COLLISION_EVENT_LOG[-25:],
         "solar_environment": build_solar_environment_payload(physical_time_s),
         "lunar_environment": build_lunar_environment_payload(physical_time_s),
         "environment_model": {
@@ -3423,66 +3733,396 @@ def trail_color_for_satellite(index):
     return TRAIL_COLORS[index % len(TRAIL_COLORS)]
 
 
+# -----------------------------
+# Dataset-backed simulation characters
+# -----------------------------
+SATELLITE_DATASET_FILENAME = "celestrak_ucs_orbit_dataset.json"
+DEBRIS_DATASET_FILENAME = "celestrak_debris_dataset_with_estimated_masses.json"
+SATELLITE_DATASET_PATH = os.environ.get(
+    "SATELLITE_DATASET_PATH",
+    os.path.join(_THIS_DIR, SATELLITE_DATASET_FILENAME),
+)
+DEBRIS_DATASET_PATH = os.environ.get(
+    "DEBRIS_DATASET_PATH",
+    os.path.join(_THIS_DIR, DEBRIS_DATASET_FILENAME),
+)
+
+
+def _candidate_dataset_paths(filename, explicit_path):
+    candidates = [
+        explicit_path,
+        os.path.join(_THIS_DIR, filename),
+        os.path.join(os.getcwd(), filename),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)) if "__file__" in globals() else os.getcwd(), filename),
+    ]
+    seen = set()
+    clean = []
+    for candidate in candidates:
+        if candidate and candidate not in seen:
+            seen.add(candidate)
+            clean.append(candidate)
+    return clean
+
+
+def load_json_dataset(filename, explicit_path):
+    errors = []
+    for path in _candidate_dataset_paths(filename, explicit_path):
+        try:
+            if os.path.exists(path):
+                with open(path, "r") as f:
+                    data = json.load(f)
+                return data, path, None
+            errors.append(f"not found: {path}")
+        except Exception as exc:
+            errors.append(f"{path}: {exc}")
+    return None, None, "; ".join(errors)
+
+
+SATELLITE_DATASET, SATELLITE_DATASET_LOADED_PATH, SATELLITE_DATASET_LOAD_ERROR = load_json_dataset(
+    SATELLITE_DATASET_FILENAME,
+    SATELLITE_DATASET_PATH,
+)
+DEBRIS_DATASET, DEBRIS_DATASET_LOADED_PATH, DEBRIS_DATASET_LOAD_ERROR = load_json_dataset(
+    DEBRIS_DATASET_FILENAME,
+    DEBRIS_DATASET_PATH,
+)
+
+if SATELLITE_DATASET is not None:
+    print(f"Loaded satellite basis dataset: {SATELLITE_DATASET_LOADED_PATH}")
+else:
+    print(f"Satellite basis dataset not loaded; fallback generated satellites will be used. {SATELLITE_DATASET_LOAD_ERROR}")
+
+if DEBRIS_DATASET is not None:
+    print(f"Loaded debris basis dataset: {DEBRIS_DATASET_LOADED_PATH}")
+else:
+    print(f"Debris basis dataset not loaded; fallback generated hazards will be used. {DEBRIS_DATASET_LOAD_ERROR}")
+
+
+def dataset_orbit_elements(record):
+    return record.get("orbit_elements") or {}
+
+
+def dataset_record_id(record):
+    return str(record.get("object_id") or f"NORAD-{record.get('norad_cat_id')}" or record.get("name") or "UNKNOWN")
+
+
+def dataset_record_name(record):
+    return str(record.get("name") or record.get("raw_celestrak_gp", {}).get("OBJECT_NAME") or dataset_record_id(record))
+
+
+def normalize_orbit_class(value):
+    if value is None:
+        return "UNKNOWN"
+    text = str(value).strip().upper()
+    if text in ["LEO", "MEO", "GEO", "HEO"]:
+        return text
+    if "HEO" in text:
+        return "HEO"
+    if "GEO" in text:
+        return "GEO"
+    if "MEO" in text:
+        return "MEO"
+    if "LEO" in text:
+        return "LEO"
+    return text or "UNKNOWN"
+
+
+def mean_motion_to_semimajor_axis_m(mean_motion_rev_per_day):
+    n_rad_s = float(mean_motion_rev_per_day) * 2.0 * pi / 86400.0
+    if n_rad_s <= 0:
+        return None
+    return (MU_EARTH / (n_rad_s ** 2)) ** (1.0 / 3.0)
+
+
+def solve_kepler_elliptic(mean_anomaly_rad, eccentricity):
+    e = clamp_value(float(eccentricity), 0.0, 0.999999)
+    M = float(mean_anomaly_rad) % (2.0 * pi)
+    E = M if e < 0.8 else pi
+    for _ in range(12):
+        f = E - e * sin(E) - M
+        fp = 1.0 - e * cos(E)
+        if abs(fp) < 1e-12:
+            break
+        dE = -f / fp
+        E += dE
+        if abs(dE) < 1e-12:
+            break
+    return E
+
+
+def orbit_elements_to_state_m(record):
+    elements = dataset_orbit_elements(record)
+    raw = record.get("raw_celestrak_gp", {}) or {}
+    mean_motion = elements.get("mean_motion_rev_per_day", raw.get("MEAN_MOTION"))
+    eccentricity = elements.get("eccentricity", raw.get("ECCENTRICITY", 0.0))
+    inclination_deg = elements.get("inclination_deg", raw.get("INCLINATION", 0.0))
+    raan_deg = elements.get("raan_deg", raw.get("RA_OF_ASC_NODE", 0.0))
+    argp_deg = elements.get("argument_of_perigee_deg", raw.get("ARG_OF_PERICENTER", 0.0))
+    mean_anomaly_deg = elements.get("mean_anomaly_deg", raw.get("MEAN_ANOMALY", 0.0))
+    a_km = elements.get("estimated_semimajor_axis_km")
+
+    if a_km is not None:
+        a_m = float(a_km) * 1000.0
+    elif mean_motion is not None:
+        a_m = mean_motion_to_semimajor_axis_m(float(mean_motion))
+    else:
+        a_m = None
+
+    if a_m is None or a_m <= R_EARTH:
+        orbit_class = normalize_orbit_class(record.get("orbit_class_estimate"))
+        if orbit_class == "MEO":
+            a_m = R_EARTH + MEO_ALTITUDES_M[0]
+        elif orbit_class in ["GEO", "HEO"]:
+            a_m = 42164000.0
+        else:
+            a_m = R_EARTH + LEO_ALTITUDES_M[0]
+
+    e = clamp_value(float(eccentricity or 0.0), 0.0, 0.95)
+    M = radians(float(mean_anomaly_deg or 0.0))
+    E = solve_kepler_elliptic(M, e)
+    n = sqrt(MU_EARTH / (a_m ** 3))
+    denom = max(1e-9, 1.0 - e * cos(E))
+
+    # Perifocal position/velocity for an elliptical orbit.
+    x_pf = a_m * (cos(E) - e)
+    y_pf = a_m * sqrt(max(0.0, 1.0 - e ** 2)) * sin(E)
+    vx_pf = -a_m * n * sin(E) / denom
+    vy_pf = a_m * n * sqrt(max(0.0, 1.0 - e ** 2)) * cos(E) / denom
+
+    pos = vector(x_pf, y_pf, 0)
+    vel = vector(vx_pf, vy_pf, 0)
+    pos = rotate(pos, angle=radians(float(argp_deg or 0.0)), axis=vector(0, 0, 1))
+    vel = rotate(vel, angle=radians(float(argp_deg or 0.0)), axis=vector(0, 0, 1))
+    pos = rotate(pos, angle=radians(float(inclination_deg or 0.0)), axis=vector(1, 0, 0))
+    vel = rotate(vel, angle=radians(float(inclination_deg or 0.0)), axis=vector(1, 0, 0))
+    pos = rotate(pos, angle=radians(float(raan_deg or 0.0)), axis=vector(0, 0, 1))
+    vel = rotate(vel, angle=radians(float(raan_deg or 0.0)), axis=vector(0, 0, 1))
+    return pos, vel
+
+
+def draw_dataset_orbit(record, orbit_color, line_radius=ORBIT_LINE_VISUAL_RADIUS):
+    try:
+        elements = dataset_orbit_elements(record)
+        raw = record.get("raw_celestrak_gp", {}) or {}
+        mean_motion = elements.get("mean_motion_rev_per_day", raw.get("MEAN_MOTION"))
+        eccentricity = clamp_value(float(elements.get("eccentricity", raw.get("ECCENTRICITY", 0.0)) or 0.0), 0.0, 0.95)
+        inclination_deg = float(elements.get("inclination_deg", raw.get("INCLINATION", 0.0)) or 0.0)
+        raan_deg = float(elements.get("raan_deg", raw.get("RA_OF_ASC_NODE", 0.0)) or 0.0)
+        argp_deg = float(elements.get("argument_of_perigee_deg", raw.get("ARG_OF_PERICENTER", 0.0)) or 0.0)
+        a_km = elements.get("estimated_semimajor_axis_km")
+        if a_km is not None:
+            a_m = float(a_km) * 1000.0
+        else:
+            a_m = mean_motion_to_semimajor_axis_m(float(mean_motion))
+        if a_m is None or a_m <= 0:
+            return None
+        p_orbit = a_m * (1.0 - eccentricity ** 2)
+        pts = []
+        for i in range(361):
+            nu = 2.0 * pi * i / 360.0
+            r = p_orbit / max(1e-9, 1.0 + eccentricity * cos(nu))
+            pos = vector(r * cos(nu), r * sin(nu), 0)
+            pos = rotate(pos, angle=radians(argp_deg), axis=vector(0, 0, 1))
+            pos = rotate(pos, angle=radians(inclination_deg), axis=vector(1, 0, 0))
+            pos = rotate(pos, angle=radians(raan_deg), axis=vector(0, 0, 1))
+            pts.append(meters_to_scene(pos))
+        return curve(pos=pts, color=orbit_color, radius=line_radius)
+    except Exception:
+        return None
+
+
+def evenly_spaced_pick(records, count):
+    if count <= 0 or not records:
+        return []
+    if count >= len(records):
+        return list(records)
+    if count == 1:
+        return [records[0]]
+    picked = []
+    used = set()
+    for i in range(count):
+        idx = int(round(i * (len(records) - 1) / max(1, count - 1)))
+        while idx in used and len(used) < len(records):
+            idx = (idx + 1) % len(records)
+        used.add(idx)
+        picked.append(records[idx])
+    return picked
+
+
+def records_for_orbit_classes(records, desired_classes):
+    desired = set(normalize_orbit_class(c) for c in desired_classes)
+    return [r for r in records if normalize_orbit_class(r.get("orbit_class_estimate")) in desired]
+
+
+def pick_satellite_records(count, desired_classes, already_used_ids):
+    if SATELLITE_DATASET is None:
+        return []
+    records = [r for r in SATELLITE_DATASET.get("satellites", []) if dataset_record_id(r) not in already_used_ids]
+    matching = records_for_orbit_classes(records, desired_classes)
+    picked = evenly_spaced_pick(matching, count)
+    if len(picked) < count:
+        picked_ids = set(dataset_record_id(r) for r in picked)
+        fallback = [r for r in records if dataset_record_id(r) not in picked_ids]
+        picked += evenly_spaced_pick(fallback, count - len(picked))
+    for rec in picked:
+        already_used_ids.add(dataset_record_id(rec))
+    return picked[:count]
+
+
+def pick_debris_records(count, desired_classes, already_used_ids):
+    if DEBRIS_DATASET is None:
+        return []
+    records = [r for r in DEBRIS_DATASET.get("debris", []) if dataset_record_id(r) not in already_used_ids]
+    matching = records_for_orbit_classes(records, desired_classes)
+    if not matching:
+        matching = records
+    # Deterministic spread prevents always taking the first records in the source file.
+    picked = evenly_spaced_pick(matching, count)
+    for rec in picked:
+        already_used_ids.add(dataset_record_id(rec))
+    return picked[:count]
+
+
+def create_dataset_satellite(record, visual_index):
+    pos, vel = orbit_elements_to_state_m(record)
+    orbit_class = normalize_orbit_class(record.get("orbit_class_estimate"))
+    object_id = dataset_record_id(record)
+    catalog_name = dataset_record_name(record)
+    orbit_description = f"dataset-backed {orbit_class} orbit from CelesTrak GP elements; catalog name {catalog_name}; id {object_id}"
+    draw_dataset_orbit(record, color.gray(0.24 if orbit_class == "LEO" else 0.16))
+    return create_satellite_from_state(
+        object_id,
+        pos,
+        vel,
+        color_for_satellite(visual_index),
+        trail_color_for_satellite(visual_index),
+        orbit_class=orbit_class,
+        orbit_description=orbit_description,
+        source_record=record,
+        object_id=object_id,
+        display_name=catalog_name,
+    )
+
+
+def create_dataset_debris_hazard(record, visual_index, collision_target_sat=None, force_collision_course=False):
+    object_id = dataset_record_id(record)
+    catalog_name = dataset_record_name(record)
+    orbit_class = normalize_orbit_class(record.get("orbit_class_estimate"))
+    if force_collision_course and collision_target_sat is not None:
+        # Keep the dataset identity, mass, metadata, and exact ID/name, but place the first
+        # requested debris hazard on the existing collision-demo trajectory so the rest of
+        # the simulation still demonstrates impact/explosion behavior.
+        target_position_m = collision_target_sat["position_m"]
+        target_velocity_mps = collision_target_sat["velocity_mps"]
+        target_radius_m = mag(target_position_m)
+        target_speed_mps = circular_speed(target_radius_m)
+        omega_rad_per_s = target_speed_mps / target_radius_m
+        target_physical_time = DESIRED_VISUAL_COLLISION_TIME_S * rate_value * BASE_DT
+        separation_angle = (2.0 * omega_rad_per_s * target_physical_time) % (2.0 * pi)
+        orbit_normal = cross(target_position_m, target_velocity_mps)
+        orbit_normal = norm(orbit_normal) if mag(orbit_normal) > 0 else vector(0, 0, 1)
+        position_m = rotate(target_position_m, angle=separation_angle, axis=orbit_normal)
+        prograde_dir = cross(orbit_normal, norm(position_m))
+        prograde_dir = norm(prograde_dir) if mag(prograde_dir) > 0 else perpendicular_velocity_dir(position_m, target_velocity_mps)
+        velocity_mps = -prograde_dir * target_speed_mps
+        orbit_description = f"dataset-backed debris hazard using {catalog_name} / {object_id}; collision-demo placement targeting {collision_target_sat['object_id']}"
+    else:
+        position_m, velocity_mps = orbit_elements_to_state_m(record)
+        orbit_description = f"dataset-backed debris orbit from CelesTrak GP elements; catalog name {catalog_name}; id {object_id}"
+        draw_dataset_orbit(record, color.gray(0.18), line_radius=ORBIT_LINE_VISUAL_RADIUS)
+
+    hazard = create_asteroid_from_state(
+        object_id,
+        position_m,
+        velocity_mps,
+        orbit_class,
+        orbit_description,
+        asteroid_color=color.red,
+        source_record=record,
+        object_id=object_id,
+        display_name=catalog_name,
+        object_type="debris",
+    )
+    hazard["dataset_backed_debris_hazard"] = True
+    hazard["shielding_mm_al"] = DEFAULT_DEBRIS_SHIELDING_MM_AL
+    if force_collision_course and collision_target_sat is not None:
+        hazard["target_satellite"] = collision_target_sat["object_id"]
+        hazard["predicted_collision_visual_time_s"] = DESIRED_VISUAL_COLLISION_TIME_S
+        hazard["predicted_collision_physical_time_s"] = DESIRED_VISUAL_COLLISION_TIME_S * rate_value * BASE_DT
+        hazard["guaranteed_collision_course"] = True
+        print(f"{object_id} ({catalog_name}) placed on dataset-backed collision course with {collision_target_sat['object_id']}.")
+    return hazard
+
+
+
 def build_requested_constellation():
     built = []
-    idx = 1
-    for i in range(REQUESTED_LEO_SATELLITES):
+    used_ids = set()
+    requested_groups = [
+        (REQUESTED_LEO_SATELLITES, ["LEO"]),
+        (REQUESTED_MEO_SATELLITES, ["MEO"]),
+        (REQUESTED_HEO_SATELLITES, ["HEO", "HEO_OR_OTHER", "GEO"]),
+    ]
+
+    visual_index = 0
+    if SATELLITE_DATASET is not None:
+        for count, classes in requested_groups:
+            for rec in pick_satellite_records(count, classes, used_ids):
+                built.append(create_dataset_satellite(rec, visual_index))
+                visual_index += 1
+
+    if len(built) == REQUESTED_LEO_SATELLITES + REQUESTED_MEO_SATELLITES + REQUESTED_HEO_SATELLITES:
+        return built
+
+    # Fallback only fills gaps if the JSON file is missing or does not contain enough usable records.
+    missing = (REQUESTED_LEO_SATELLITES + REQUESTED_MEO_SATELLITES + REQUESTED_HEO_SATELLITES) - len(built)
+    idx = len(built) + 1
+    for i in range(missing):
         alt = LEO_ALTITUDES_M[i % len(LEO_ALTITUDES_M)]
         inc = [53, 70, 98, 45, 82][i % 5]
-        raan = (i * 360.0 / max(1, REQUESTED_LEO_SATELLITES)) % 360
+        raan = (i * 360.0 / max(1, missing)) % 360
         phase = (i * 137.5) % 360
         draw_circular_orbit(alt, color.gray(0.27), inc, raan)
-        built.append(create_satellite(f"SAT-{idx}", alt, inc, raan, phase, color_for_satellite(idx - 1), trail_color_for_satellite(idx - 1), orbit_class="LEO", orbit_description=f"LEO circular orbit, altitude {alt / 1000.0:.0f} km"))
-        idx += 1
-    for i in range(REQUESTED_MEO_SATELLITES):
-        alt = MEO_ALTITUDES_M[i % len(MEO_ALTITUDES_M)]
-        inc = [55, 56, 63][i % 3]
-        raan = (35 + i * 360.0 / max(1, REQUESTED_MEO_SATELLITES)) % 360
-        phase = (90 + i * 131.0) % 360
-        draw_circular_orbit(alt, color.gray(0.18), inc, raan)
-        built.append(create_satellite(f"SAT-{idx}", alt, inc, raan, phase, color_for_satellite(idx - 1), trail_color_for_satellite(idx - 1), orbit_class="MEO", orbit_description=f"MEO circular orbit, altitude {alt / 1000.0:.0f} km"))
-        idx += 1
-    for i in range(REQUESTED_HEO_SATELLITES):
-        inc = 63.4
-        raan = (70 + i * 360.0 / max(1, REQUESTED_HEO_SATELLITES)) % 360
-        argp = 270
-        ta = (i * 147.0) % 360
-        draw_elliptical_orbit(HEO_PERIGEE_ALTITUDE_M, HEO_APOGEE_ALTITUDE_M, color.gray(0.16), inc, raan, argp)
-        built.append(create_heo_satellite(f"SAT-{idx}", HEO_PERIGEE_ALTITUDE_M, HEO_APOGEE_ALTITUDE_M, inc, raan, argp, ta, color_for_satellite(idx - 1), trail_color_for_satellite(idx - 1)))
+        built.append(create_satellite(f"SAT-FALLBACK-{idx}", alt, inc, raan, phase, color_for_satellite(idx - 1), trail_color_for_satellite(idx - 1), orbit_class="LEO", orbit_description=f"fallback generated LEO circular orbit, altitude {alt / 1000.0:.0f} km"))
         idx += 1
     return built
 
 
 def build_requested_asteroids(existing_satellites):
     built = []
-    idx = 1
+    used_ids = set()
+    requested_groups = [
+        (REQUESTED_LEO_ASTEROIDS, ["LEO"]),
+        (REQUESTED_MEO_ASTEROIDS, ["MEO"]),
+        (REQUESTED_HEO_ASTEROIDS, ["HEO", "HEO_OR_OTHER", "GEO"]),
+    ]
     target_sat = existing_satellites[min(1, len(existing_satellites) - 1)] if len(existing_satellites) > 0 else None
-    for i in range(REQUESTED_LEO_ASTEROIDS):
-        if i == 0 and target_sat is not None:
-            built.append(create_physical_asteroid(target_sat, DESIRED_VISUAL_COLLISION_TIME_S, name=f"AST-{idx}"))
+    visual_index = 0
+
+    if DEBRIS_DATASET is not None:
+        for group_index, (count, classes) in enumerate(requested_groups):
+            for rec_index, rec in enumerate(pick_debris_records(count, classes, used_ids)):
+                force_collision = (group_index == 0 and rec_index == 0 and target_sat is not None)
+                built.append(create_dataset_debris_hazard(rec, visual_index, target_sat, force_collision))
+                visual_index += 1
+
+    requested_total = REQUESTED_LEO_ASTEROIDS + REQUESTED_MEO_ASTEROIDS + REQUESTED_HEO_ASTEROIDS
+    if len(built) == requested_total:
+        return built
+
+    # Fallback only fills gaps if the debris JSON is unavailable or too small.
+    idx = len(built) + 1
+    remaining = requested_total - len(built)
+    for i in range(remaining):
+        if i == 0 and target_sat is not None and len(built) == 0:
+            built.append(create_physical_asteroid(target_sat, DESIRED_VISUAL_COLLISION_TIME_S, name=f"AST-FALLBACK-{idx}"))
         else:
             alt = LEO_ALTITUDES_M[i % len(LEO_ALTITUDES_M)] + 50000.0
             inc = [51.6, 63, 74, 97][i % 4]
-            raan = (20 + i * 360.0 / max(1, REQUESTED_LEO_ASTEROIDS)) % 360
+            raan = (20 + i * 360.0 / max(1, remaining)) % 360
             phase = (45 + i * 123.0) % 360
             draw_circular_orbit(alt, color.gray(0.20), inc, raan)
-            built.append(create_circular_asteroid(f"AST-{idx}", alt, inc, raan, phase, "LEO", prograde=False))
-        idx += 1
-    for i in range(REQUESTED_MEO_ASTEROIDS):
-        alt = MEO_ALTITUDES_M[i % len(MEO_ALTITUDES_M)] + 100000.0
-        inc = [55, 63, 70][i % 3]
-        raan = (55 + i * 360.0 / max(1, REQUESTED_MEO_ASTEROIDS)) % 360
-        phase = (120 + i * 129.0) % 360
-        draw_circular_orbit(alt, color.gray(0.14), inc, raan)
-        built.append(create_circular_asteroid(f"AST-{idx}", alt, inc, raan, phase, "MEO", prograde=False))
-        idx += 1
-    for i in range(REQUESTED_HEO_ASTEROIDS):
-        inc = 63.4
-        raan = (95 + i * 360.0 / max(1, REQUESTED_HEO_ASTEROIDS)) % 360
-        argp = 270
-        ta = (60 + i * 151.0) % 360
-        draw_elliptical_orbit(HEO_PERIGEE_ALTITUDE_M, HEO_APOGEE_ALTITUDE_M, color.gray(0.12), inc, raan, argp)
-        built.append(create_heo_asteroid(f"AST-{idx}", HEO_PERIGEE_ALTITUDE_M, HEO_APOGEE_ALTITUDE_M, inc, raan, argp, ta, prograde=False))
+            built.append(create_circular_asteroid(f"AST-FALLBACK-{idx}", alt, inc, raan, phase, "LEO", prograde=False))
         idx += 1
     return built
 
@@ -3592,7 +4232,7 @@ while True:
                     warning_label.pos = meters_to_scene(collision_pos_m) + vector(0, 0.55, 0)
                     hide_satellite(sat)
                     hide_object(ast)
-                    visuals, new_debris = create_breakup_event(collision_pos_m, destroyed_velocity_mps)
+                    visuals, new_debris = create_breakup_event(collision_pos_m, destroyed_velocity_mps, destroyed_object=sat, impactor_object=ast, event_prefix="SAT-HIT")
                     active_visual_events.append(visuals)
                     debris_particles.extend(new_debris)
                     asteroid_collision_happened = True
@@ -3616,7 +4256,7 @@ while True:
                 warning_label.pos = meters_to_scene(collision_pos_m) + vector(0, 0.55, 0)
                 hide_satellite(sat)
                 hide_debris(debris)
-                visuals, new_debris = create_breakup_event(collision_pos_m, destroyed_velocity_mps)
+                visuals, new_debris = create_breakup_event(collision_pos_m, destroyed_velocity_mps, destroyed_object=sat, impactor_object=debris, event_prefix="CHAIN-HIT")
                 active_visual_events.append(visuals)
                 debris_particles.extend(new_debris)
                 debris_collision_happened = True
