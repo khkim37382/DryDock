@@ -8,6 +8,17 @@ from datetime import datetime
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
+## Wipe before hand so that no manual cleaning
+def clear_directories():
+    """wipe all JSON files from working directories on startup for a fresh run"""
+    for directory in [COMMANDS_DIR, OUTPUT_DIR]:  # SMS uses these two
+        for filename in os.listdir(directory):
+            if filename.endswith(".json"):
+                filepath = os.path.join(directory, filename)
+                os.remove(filepath)
+                print(f"[startup] cleared: {filepath}")
+    print("[startup] all directories cleared, starting fresh")
+
 BROKER_IP = ""  # fill in
 TOPIC_TELEMETRY = "satellite/telemetry"
 TOPIC_THRUSTER = "satellite/thruster"
@@ -19,6 +30,8 @@ MAX_AGE_SECONDS = 180
 os.makedirs(COMMANDS_DIR, exist_ok=True)
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
+clear_directories()
+
 if not BROKER_IP:
     raise ValueError("Set BROKER_IP before running")
 
@@ -27,6 +40,8 @@ last_gsm_to_sms_trip_ns = None
 
 
 # ─── MQTT CALLBACKS ───────────────────────────────────────────────────────────
+
+
 
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
