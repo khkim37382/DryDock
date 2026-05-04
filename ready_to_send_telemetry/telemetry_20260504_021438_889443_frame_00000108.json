@@ -1,0 +1,4424 @@
+{
+  "schema": "satellite_simulation.telemetry.v2.earth_sun_sensor_fusion",
+  "frame": 108,
+  "measurement_timestamp": {
+    "unix_time_s": 1777860878.888942,
+    "utc_iso": "2026-05-04T02:14:38.888942+00:00",
+    "simulation_visual_time_s": 0.9,
+    "simulation_physical_time_s": 540.0,
+    "frame": 108,
+    "sample_hz": 10.0,
+    "base_sample_hz": 10.0,
+    "speed_multiplier": 1.0
+  },
+  "utc_iso": "2026-05-04T02:14:38.888942+00:00",
+  "unix_time_s": 1777860878.888942,
+  "visual_time_s": 0.9,
+  "physical_time_s": 540.0,
+  "mars_removed": true,
+  "units": {
+    "position": "meters, Earth-centered inertial demo frame",
+    "velocity": "meters per second",
+    "mass": "kilograms",
+    "radius": "meters",
+    "time": "seconds",
+    "timestamp": "UTC ISO-8601 and Unix seconds"
+  },
+  "constants": {
+    "earth_mu_m3_s2": 398600441800000.0,
+    "earth_radius_m": 6371008.4,
+    "earth_j2": 0.00108262668,
+    "j2_perturbation_enabled": true,
+    "atmospheric_drag_enabled": true,
+    "drag_coefficient": 2.2,
+    "max_drag_altitude_m": 800000.0,
+    "sun_true_radius_m": 695700000.0,
+    "sun_scene_radius_earth_radii": 109.19778413728037,
+    "earth_sun_distance_m": 149597870700.0,
+    "solar_constant_w_m2_at_1au": 1361.0,
+    "earth_rotation_rate_rad_s": 7.2921159e-05,
+    "earth_orbital_speed_mps": 29784.691831696804,
+    "earth_orbital_angular_rate_rad_s": 1.990983674588946e-07,
+    "time_step_s": 5.0,
+    "base_time_step_s": 5.0,
+    "speed_multiplier": 1,
+    "passive_rf_enabled": true,
+    "rf_model_type": "maxwell_derived_far_field_link_budget",
+    "rf_maxwell_based": true,
+    "rf_model_note": "Maxwell-derived far-field approximation: c, wavelength, free-space path loss, Doppler shift, antenna gain, noise floor, and SNR. This is not a full FDTD/Maxwell grid solver.",
+    "rf_frequency_hz": 2200000000.0,
+    "rf_wavelength_m": 0.1362692990909091,
+    "radiation_model_enabled": true,
+    "radiation_model_type": "earth_orbit_space_weather_and_radiation_belt_model",
+    "solar_sensor_model_enabled": true,
+    "router_layer_included": false
+  },
+  "counts": {
+    "active_satellites": 6,
+    "active_asteroids": 6,
+    "active_debris": 0,
+    "total_hazards": 6,
+    "passive_rf_detections": 0,
+    "critical_rf_detections": 0,
+    "high_rf_detections": 0,
+    "radiation_monitored_objects": 12,
+    "high_radiation_risk_objects": 6,
+    "critical_radiation_risk_objects": 2,
+    "solar_storm_active": false
+  },
+  "satellites": [
+    {
+      "id": "SAT-1",
+      "type": "satellite",
+      "active": true,
+      "selected_for_data": false,
+      "position_m_eci": {
+        "x": 5750179.090102947,
+        "y": 2305214.5710232467,
+        "z": 3058626.600991214
+      },
+      "velocity_mps_eci": {
+        "x": -4214.728116950769,
+        "y": 3807.4592744082497,
+        "z": 5049.969819692405
+      },
+      "speed_mps": 7600.189103298477,
+      "distance_from_earth_center_m": 6908963.053237882,
+      "altitude_m": 537954.6532378821,
+      "altitude_km": 537.9546532378821,
+      "specific_orbital_energy_j_per_kg": -28811799.644395247,
+      "central_body": "Earth",
+      "measurement_timestamp": {
+        "unix_time_s": 1777860878.888942,
+        "utc_iso": "2026-05-04T02:14:38.888942+00:00",
+        "simulation_visual_time_s": 0.9,
+        "simulation_physical_time_s": 540.0,
+        "frame": 108,
+        "sample_hz": 10.0,
+        "base_sample_hz": 10.0,
+        "speed_multiplier": 1.0
+      },
+      "mass_kg": 500.0,
+      "physical_radius_m": 1.5,
+      "can_maneuver": true,
+      "destroyed": false,
+      "orbit_class": "LEO",
+      "orbit_description": "LEO circular orbit, altitude 550 km",
+      "environment_vectors": {
+        "schema": "satellite_simulation.environment_vectors.v2",
+        "object_id": "SAT-1",
+        "object_type": "satellite",
+        "central_body": "Earth",
+        "sun_position_m_eci": {
+          "x": -149597869835.39383,
+          "y": -16083733.55813077,
+          "z": -0.0
+        },
+        "sun_vector_from_object_eci": {
+          "x": -0.9999999922366107,
+          "y": -0.00012291780095035886,
+          "z": -2.0444870097059038e-05
+        },
+        "earth_vector_from_object_eci": {
+          "x": -0.8322781647251867,
+          "y": -0.3336556518337305,
+          "z": -0.44270414784716355
+        },
+        "nadir_vector_eci": {
+          "x": -0.8322781647251867,
+          "y": -0.3336556518337305,
+          "z": -0.44270414784716355
+        },
+        "velocity_unit_vector_eci": {
+          "x": -0.5545556906105902,
+          "y": 0.5009690183571637,
+          "z": 0.6644531801847827
+        },
+        "distance_to_sun_m": 149603621175.91507,
+        "distance_to_earth_center_m": 6908963.053237882,
+        "altitude_over_earth_m": 537954.6532378821,
+        "solar_irradiance_w_m2": 1360.8953735578987,
+        "solar_irradiance_without_eclipse_w_m2": 1360.8953735578987,
+        "earth_heliocentric_position_m": {
+          "x": 149597869835.39383,
+          "y": 16083733.55813077,
+          "z": 0.0
+        },
+        "earth_heliocentric_velocity_mps": {
+          "x": -3.2022450940676745,
+          "y": 29784.691659555127,
+          "z": 0.0
+        },
+        "earth_orbital_true_anomaly_rad": 0.00010751311842780309,
+        "earth_orbital_speed_mps": 29784.691831696804,
+        "earth_orbital_angular_rate_rad_s": 1.990983674588946e-07,
+        "earth_rotation_rate_rad_s": 7.2921159e-05,
+        "external_control_note": "External controller can use sun/nadir/velocity vectors for roll, attitude, antenna, and solar panel optimization. The sim does not choose the control action."
+      },
+      "sunlight_state": {
+        "in_sunlight": true,
+        "in_eclipse": false,
+        "eclipse_body": null,
+        "nearest_shadow_body": "Earth",
+        "sun_exposure_factor": 1.0,
+        "shadow_margin_m": null,
+        "distance_to_shadow_axis_m": null,
+        "model_type": "cylindrical_earth_shadow_geometry",
+        "used_for": [
+          "solar_panel_power_inputs",
+          "thermal_sensor_inputs",
+          "radiation_sun_exposure_inputs"
+        ]
+      },
+      "attitude_state": {
+        "schema": "satellite_simulation.attitude_state.v1",
+        "roll_deg": 0.0,
+        "pitch_deg": 0.0,
+        "yaw_deg": 188.08999586190748,
+        "panel_rotation_deg": 0.0,
+        "angular_rate_dps": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "angular_rate_magnitude_dps": 0.0,
+        "attitude_stability": "stable",
+        "panel_normal_eci": {
+          "x": -8.250342441162462e-05,
+          "y": -0.79851400027239,
+          "z": 0.60197623255588
+        },
+        "antenna_normal_eci": {
+          "x": -0.8211070397181514,
+          "y": -0.4596494327793352,
+          "z": -0.33838680274344274
+        },
+        "attitude_control_source": "default_simulated_attitude_or_external_commands",
+        "external_control_note": "External controller may command roll/pitch/yaw/panel_rotation. Simulation reports resulting geometry but does not optimize it internally."
+      },
+      "solar_panel_system": {
+        "schema": "satellite_simulation.solar_panel_system.v1",
+        "in_sunlight": true,
+        "in_eclipse": false,
+        "sun_vector_eci": {
+          "x": -0.9999999922366107,
+          "y": -0.00012291780095035886,
+          "z": -2.0444870097059038e-05
+        },
+        "panel_normal_eci": {
+          "x": -8.250342441162462e-05,
+          "y": -0.79851400027239,
+          "z": 0.60197623255588
+        },
+        "sun_incidence_angle_deg": 89.9903543882371,
+        "panel_efficiency_factor": 0.00016834768283655288,
+        "solar_irradiance_w_m2": 1360.8953735578987,
+        "panel_area_m2": 4.0,
+        "panel_efficiency": 0.28,
+        "estimated_solar_generation_w": 0.2565959775908311,
+        "max_solar_generation_w": 1524.3200000000002,
+        "recommended_panel_rotation_deg": 89.9903543882371,
+        "panel_rotation_rate_limit_deg_per_s": 1.2,
+        "solar_optimization_state": "poor_sun_alignment",
+        "charging_priority": "low",
+        "external_control_note": "External controller should use these values to command roll/panel attitude. The sim does not optimize automatically."
+      },
+      "voltage_sensors": {
+        "schema": "satellite_simulation.voltage_sensors.v1",
+        "solar_panel_voltage_v": 9.050595524543485,
+        "solar_panel_current_a": 0.02835128107260918,
+        "battery_voltage_v": 28.46652175806141,
+        "bus_voltage_v": 27.855118569930486,
+        "bus_current_draw_a": 9.334011605345282,
+        "net_charge_current_a": -9.124521999209568,
+        "sensor_noise_fraction": 0.008
+      },
+      "power_system": {
+        "schema": "satellite_simulation.power_system.v1",
+        "battery_percent": 87.0641580295079,
+        "battery_capacity_wh": 1200.0,
+        "solar_generation_w": 0.2565959775908311,
+        "load_w": 260.0,
+        "base_load_w": 260.0,
+        "rf_payload_load_w": 0.0,
+        "radiation_fault_load_w": 0.0,
+        "power_margin_w": -259.74340402240915,
+        "battery_charging_w": 0.0,
+        "battery_discharging_w": 259.74340402240915,
+        "power_risk_level": "critical"
+      },
+      "thermal_profile": {
+        "schema": "satellite_simulation.thermal_profile.v1",
+        "bus_temperature_c": 20.929766531469458,
+        "battery_temperature_c": 18.476292641049742,
+        "processor_temperature_c": 35.00197757258192,
+        "power_amp_temperature_c": 41.09421976136389,
+        "max_component_temperature_c": 41.09421976136389,
+        "thermal_risk_level": "low",
+        "thermal_fault_state": "nominal",
+        "in_sunlight": true,
+        "in_eclipse": false,
+        "thermal_inputs": {
+          "sunlight_heat_component_c": 0.0020201721940386348,
+          "electronics_heat_component_c": 9.100000000000001,
+          "radiation_storm_heat_component_c": 0.0,
+          "eclipse_cooling_component_c": 0.0
+        },
+        "temperature_sensor_noise_c": 0.25
+      },
+      "communication_link": {
+        "schema": "satellite_simulation.communication_link.v1",
+        "link_available": true,
+        "link_snr_db": 31.435423975675427,
+        "packet_loss_probability": 0.031,
+        "latency_ms": 46.239105152057995,
+        "rf_blackout_probability": 0.011000000000000001,
+        "antenna_pointing_factor": 0.9865593323198095,
+        "communication_risk_level": "low"
+      },
+      "radiation": {
+        "object_id": "SAT-1",
+        "object_type": "satellite",
+        "central_body": "Earth",
+        "radiation_region": "low_earth_orbit",
+        "position_m_eci": {
+          "x": 5750179.090102947,
+          "y": 2305214.5710232467,
+          "z": 3058626.600991214
+        },
+        "speed_mps": 7600.189103298477,
+        "mass_kg": 500.0,
+        "shielding_mm_aluminum": 2.5,
+        "shielding_factor": 0.7807091821557101,
+        "baseline_dose_rate_msv_per_day": 0.35,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 0.2732482137544985,
+        "particle_flux_pfu_gt_10mev": 36.0,
+        "particle_flux_pfu": 36.0,
+        "estimated_single_event_upset_rate_per_day": 0.000335605267871789,
+        "single_event_upset_probability_per_day": 0.000335605267871789,
+        "solar_panel_degradation_fraction_per_day": 2.1859857100359882e-05,
+        "communications_blackout_probability": 0.011000000000000001,
+        "radiation_risk_level": "low",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": false,
+          "critical_dose_rate": false,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.0017078013359656155,
+        "electronics_health_percent": 99.99476028572448,
+        "radiation_fault_state": "nominal",
+        "radiation_fault_active": false
+      },
+      "sensor_fusion_state": {
+        "schema": "satellite_simulation.sensor_fusion_state.v1",
+        "collision_risk_score": 0.08,
+        "radiation_risk_score": 0.15,
+        "thermal_risk_score": 0.15,
+        "power_risk_score": 0.95,
+        "communication_risk_score": 0.15,
+        "solar_charging_score": 0.00016834768283655288,
+        "fused_health_score": 0.6941283160590158,
+        "overall_operational_risk_score": 0.2556,
+        "confidence": 0.72,
+        "recommended_external_action": "continue_nominal_monitoring",
+        "candidate_external_actions": [
+          "continue_nominal_monitoring"
+        ],
+        "router_layer_included_in_simulation": false
+      }
+    },
+    {
+      "id": "SAT-2",
+      "type": "satellite",
+      "active": true,
+      "selected_for_data": false,
+      "position_m_eci": {
+        "x": 6955969.129123222,
+        "y": -415473.0421807831,
+        "z": 1140057.421776738
+      },
+      "velocity_mps_eci": {
+        "x": 1295.8597292087068,
+        "y": 2532.978818856416,
+        "z": -6963.625442915898
+      },
+      "speed_mps": 7522.453950924907,
+      "distance_from_earth_center_m": 7061009.509910212,
+      "altitude_m": 690001.1099102115,
+      "altitude_km": 690.0011099102115,
+      "specific_orbital_energy_j_per_kg": -28157257.448461875,
+      "central_body": "Earth",
+      "measurement_timestamp": {
+        "unix_time_s": 1777860878.888942,
+        "utc_iso": "2026-05-04T02:14:38.888942+00:00",
+        "simulation_visual_time_s": 0.9,
+        "simulation_physical_time_s": 540.0,
+        "frame": 108,
+        "sample_hz": 10.0,
+        "base_sample_hz": 10.0,
+        "speed_multiplier": 1.0
+      },
+      "mass_kg": 500.0,
+      "physical_radius_m": 1.5,
+      "can_maneuver": true,
+      "destroyed": false,
+      "orbit_class": "LEO",
+      "orbit_description": "LEO circular orbit, altitude 700 km",
+      "environment_vectors": {
+        "schema": "satellite_simulation.environment_vectors.v2",
+        "object_id": "SAT-2",
+        "object_type": "satellite",
+        "central_body": "Earth",
+        "sun_position_m_eci": {
+          "x": -149597869835.39383,
+          "y": -16083733.55813077,
+          "z": -0.0
+        },
+        "sun_vector_from_object_eci": {
+          "x": -0.999999994486675,
+          "y": -0.00010473098274275108,
+          "z": -7.620458827851287e-06
+        },
+        "earth_vector_from_object_eci": {
+          "x": -0.9851238862319099,
+          "y": 0.05884045922862187,
+          "z": -0.16145813430454295
+        },
+        "nadir_vector_eci": {
+          "x": -0.9851238862319099,
+          "y": 0.05884045922862187,
+          "z": -0.16145813430454295
+        },
+        "velocity_unit_vector_eci": {
+          "x": 0.17226555824238407,
+          "y": 0.3367224093867639,
+          "z": -0.9257119403249654
+        },
+        "distance_to_sun_m": 149604826629.343,
+        "distance_to_earth_center_m": 7061009.509910212,
+        "altitude_over_earth_m": 690001.1099102115,
+        "solar_irradiance_w_m2": 1360.8734425892148,
+        "solar_irradiance_without_eclipse_w_m2": 1360.8734425892148,
+        "earth_heliocentric_position_m": {
+          "x": 149597869835.39383,
+          "y": 16083733.55813077,
+          "z": 0.0
+        },
+        "earth_heliocentric_velocity_mps": {
+          "x": -3.2022450940676745,
+          "y": 29784.691659555127,
+          "z": 0.0
+        },
+        "earth_orbital_true_anomaly_rad": 0.00010751311842780309,
+        "earth_orbital_speed_mps": 29784.691831696804,
+        "earth_orbital_angular_rate_rad_s": 1.990983674588946e-07,
+        "earth_rotation_rate_rad_s": 7.2921159e-05,
+        "external_control_note": "External controller can use sun/nadir/velocity vectors for roll, attitude, antenna, and solar panel optimization. The sim does not choose the control action."
+      },
+      "sunlight_state": {
+        "in_sunlight": true,
+        "in_eclipse": false,
+        "eclipse_body": null,
+        "nearest_shadow_body": "Earth",
+        "sun_exposure_factor": 1.0,
+        "shadow_margin_m": null,
+        "distance_to_shadow_axis_m": null,
+        "model_type": "cylindrical_earth_shadow_geometry",
+        "used_for": [
+          "solar_panel_power_inputs",
+          "thermal_sensor_inputs",
+          "radiation_sun_exposure_inputs"
+        ]
+      },
+      "attitude_state": {
+        "schema": "satellite_simulation.attitude_state.v1",
+        "roll_deg": 0.0,
+        "pitch_deg": 0.0,
+        "yaw_deg": 175.87707091843964,
+        "panel_rotation_deg": 0.0,
+        "angular_rate_dps": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "angular_rate_magnitude_dps": 0.0,
+        "attitude_stability": "stable",
+        "panel_normal_eci": {
+          "x": 0.00010274369335769861,
+          "y": 0.9397547052114464,
+          "z": 0.3418495041340281
+        },
+        "antenna_normal_eci": {
+          "x": -0.9735287013720613,
+          "y": 0.2018166090897343,
+          "z": -0.10729363401595352
+        },
+        "attitude_control_source": "default_simulated_attitude_or_external_commands",
+        "external_control_note": "External controller may command roll/pitch/yaw/panel_rotation. Simulation reports resulting geometry but does not optimize it internally."
+      },
+      "solar_panel_system": {
+        "schema": "satellite_simulation.solar_panel_system.v1",
+        "in_sunlight": true,
+        "in_eclipse": false,
+        "sun_vector_eci": {
+          "x": -0.999999994486675,
+          "y": -0.00010473098274275108,
+          "z": -7.620458827851287e-06
+        },
+        "panel_normal_eci": {
+          "x": 0.00010274369335769861,
+          "y": 0.9397547052114464,
+          "z": 0.3418495041340281
+        },
+        "sun_incidence_angle_deg": 90.01167517119501,
+        "panel_efficiency_factor": 0.0,
+        "solar_irradiance_w_m2": 1360.8734425892148,
+        "panel_area_m2": 4.0,
+        "panel_efficiency": 0.28,
+        "estimated_solar_generation_w": 0.0,
+        "max_solar_generation_w": 1524.3200000000002,
+        "recommended_panel_rotation_deg": 90.01167517119501,
+        "panel_rotation_rate_limit_deg_per_s": 1.2,
+        "solar_optimization_state": "poor_sun_alignment",
+        "charging_priority": "low",
+        "external_control_note": "External controller should use these values to command roll/panel attitude. The sim does not optimize automatically."
+      },
+      "voltage_sensors": {
+        "schema": "satellite_simulation.voltage_sensors.v1",
+        "solar_panel_voltage_v": 8.966821871727387,
+        "solar_panel_current_a": 0.0,
+        "battery_voltage_v": 28.35879838972398,
+        "bus_voltage_v": 27.908723882519087,
+        "bus_current_draw_a": 9.316083425901592,
+        "net_charge_current_a": -9.168230488010131,
+        "sensor_noise_fraction": 0.008
+      },
+      "power_system": {
+        "schema": "satellite_simulation.power_system.v1",
+        "battery_percent": 91.85034665349004,
+        "battery_capacity_wh": 1200.0,
+        "solar_generation_w": 0.0,
+        "load_w": 260.0,
+        "base_load_w": 260.0,
+        "rf_payload_load_w": 0.0,
+        "radiation_fault_load_w": 0.0,
+        "power_margin_w": -260.0,
+        "battery_charging_w": 0.0,
+        "battery_discharging_w": 260.0,
+        "power_risk_level": "critical"
+      },
+      "thermal_profile": {
+        "schema": "satellite_simulation.thermal_profile.v1",
+        "bus_temperature_c": 21.77093375267434,
+        "battery_temperature_c": 18.751002392107953,
+        "processor_temperature_c": 37.30606353024572,
+        "power_amp_temperature_c": 38.555099804665836,
+        "max_component_temperature_c": 38.555099804665836,
+        "thermal_risk_level": "low",
+        "thermal_fault_state": "nominal",
+        "in_sunlight": true,
+        "in_eclipse": false,
+        "thermal_inputs": {
+          "sunlight_heat_component_c": 0.0,
+          "electronics_heat_component_c": 9.100000000000001,
+          "radiation_storm_heat_component_c": 0.0,
+          "eclipse_cooling_component_c": 0.0
+        },
+        "temperature_sensor_noise_c": 0.25
+      },
+      "communication_link": {
+        "schema": "satellite_simulation.communication_link.v1",
+        "link_available": true,
+        "link_snr_db": 31.475874950009352,
+        "packet_loss_probability": 0.031,
+        "latency_ms": 39.60745155460577,
+        "rf_blackout_probability": 0.011000000000000001,
+        "antenna_pointing_factor": 0.988244789583723,
+        "communication_risk_level": "low"
+      },
+      "radiation": {
+        "object_id": "SAT-2",
+        "object_type": "satellite",
+        "central_body": "Earth",
+        "radiation_region": "low_earth_orbit",
+        "position_m_eci": {
+          "x": 6955969.129123222,
+          "y": -415473.0421807831,
+          "z": 1140057.421776738
+        },
+        "speed_mps": 7522.453950924907,
+        "mass_kg": 500.0,
+        "shielding_mm_aluminum": 2.5,
+        "shielding_factor": 0.7807091821557101,
+        "baseline_dose_rate_msv_per_day": 0.35,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 0.2732482137544985,
+        "particle_flux_pfu_gt_10mev": 36.0,
+        "particle_flux_pfu": 36.0,
+        "estimated_single_event_upset_rate_per_day": 0.000335605267871789,
+        "single_event_upset_probability_per_day": 0.000335605267871789,
+        "solar_panel_degradation_fraction_per_day": 2.1859857100359882e-05,
+        "communications_blackout_probability": 0.011000000000000001,
+        "radiation_risk_level": "low",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": false,
+          "critical_dose_rate": false,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.0017078013359656155,
+        "electronics_health_percent": 99.99476028572448,
+        "radiation_fault_state": "nominal",
+        "radiation_fault_active": false
+      },
+      "sensor_fusion_state": {
+        "schema": "satellite_simulation.sensor_fusion_state.v1",
+        "collision_risk_score": 0.08,
+        "radiation_risk_score": 0.15,
+        "thermal_risk_score": 0.15,
+        "power_risk_score": 0.95,
+        "communication_risk_score": 0.15,
+        "solar_charging_score": 0.0,
+        "fused_health_score": 0.70370069330698,
+        "overall_operational_risk_score": 0.2556,
+        "confidence": 0.72,
+        "recommended_external_action": "continue_nominal_monitoring",
+        "candidate_external_actions": [
+          "continue_nominal_monitoring"
+        ],
+        "router_layer_included_in_simulation": false
+      }
+    },
+    {
+      "id": "SAT-3",
+      "type": "satellite",
+      "active": true,
+      "selected_for_data": true,
+      "position_m_eci": {
+        "x": -10410459.400721658,
+        "y": 11258674.425042799,
+        "z": 21698926.132840306
+      },
+      "velocity_mps_eci": {
+        "x": -3063.899295223803,
+        "y": -2356.609714720762,
+        "z": -247.17459188291363
+      },
+      "speed_mps": 3873.265226867594,
+      "distance_from_earth_center_m": 26570261.761255696,
+      "altitude_m": 20199253.361255698,
+      "altitude_km": 20199.253361255698,
+      "specific_orbital_energy_j_per_kg": -7500658.896905359,
+      "central_body": "Earth",
+      "measurement_timestamp": {
+        "unix_time_s": 1777860878.888942,
+        "utc_iso": "2026-05-04T02:14:38.888942+00:00",
+        "simulation_visual_time_s": 0.9,
+        "simulation_physical_time_s": 540.0,
+        "frame": 108,
+        "sample_hz": 10.0,
+        "base_sample_hz": 10.0,
+        "speed_multiplier": 1.0
+      },
+      "mass_kg": 500.0,
+      "physical_radius_m": 1.5,
+      "can_maneuver": true,
+      "destroyed": false,
+      "orbit_class": "MEO",
+      "orbit_description": "MEO circular orbit, altitude 20200 km",
+      "environment_vectors": {
+        "schema": "satellite_simulation.environment_vectors.v2",
+        "object_id": "SAT-3",
+        "object_type": "satellite",
+        "central_body": "Earth",
+        "sun_position_m_eci": {
+          "x": -149597869835.39383,
+          "y": -16083733.55813077,
+          "z": -0.0
+        },
+        "sun_vector_from_object_eci": {
+          "x": -0.9999999727737664,
+          "y": -0.00018278542434507647,
+          "z": -0.00014505845364696848
+        },
+        "earth_vector_from_object_eci": {
+          "x": 0.391808688008562,
+          "y": -0.423732160646607,
+          "z": -0.8166621137500915
+        },
+        "nadir_vector_eci": {
+          "x": 0.391808688008562,
+          "y": -0.423732160646607,
+          "z": -0.8166621137500915
+        },
+        "velocity_unit_vector_eci": {
+          "x": -0.7910378235837092,
+          "y": -0.6084297296177187,
+          "z": -0.06381556062010499
+        },
+        "distance_to_sun_m": 149587463448.69632,
+        "distance_to_earth_center_m": 26570261.761255696,
+        "altitude_over_earth_m": 20199253.361255698,
+        "solar_irradiance_w_m2": 1361.1893843430885,
+        "solar_irradiance_without_eclipse_w_m2": 1361.1893843430885,
+        "earth_heliocentric_position_m": {
+          "x": 149597869835.39383,
+          "y": 16083733.55813077,
+          "z": 0.0
+        },
+        "earth_heliocentric_velocity_mps": {
+          "x": -3.2022450940676745,
+          "y": 29784.691659555127,
+          "z": 0.0
+        },
+        "earth_orbital_true_anomaly_rad": 0.00010751311842780309,
+        "earth_orbital_speed_mps": 29784.691831696804,
+        "earth_orbital_angular_rate_rad_s": 1.990983674588946e-07,
+        "earth_rotation_rate_rad_s": 7.2921159e-05,
+        "external_control_note": "External controller can use sun/nadir/velocity vectors for roll, attitude, antenna, and solar panel optimization. The sim does not choose the control action."
+      },
+      "sunlight_state": {
+        "in_sunlight": true,
+        "in_eclipse": false,
+        "eclipse_body": null,
+        "nearest_shadow_body": "Earth",
+        "sun_exposure_factor": 1.0,
+        "shadow_margin_m": null,
+        "distance_to_shadow_axis_m": null,
+        "model_type": "cylindrical_earth_shadow_geometry",
+        "used_for": [
+          "solar_panel_power_inputs",
+          "thermal_sensor_inputs",
+          "radiation_sun_exposure_inputs"
+        ]
+      },
+      "attitude_state": {
+        "schema": "satellite_simulation.attitude_state.v1",
+        "roll_deg": 0.0,
+        "pitch_deg": 0.0,
+        "yaw_deg": 235.52788641628308,
+        "panel_rotation_deg": 0.0,
+        "angular_rate_dps": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "angular_rate_magnitude_dps": 0.0,
+        "attitude_stability": "stable",
+        "panel_normal_eci": {
+          "x": 0.4698408036905332,
+          "y": -0.6710141121694628,
+          "z": 0.5735762202679443
+        },
+        "antenna_normal_eci": {
+          "x": 0.47945296579033414,
+          "y": -0.5517622613407923,
+          "z": -0.6824098918941225
+        },
+        "attitude_control_source": "default_simulated_attitude_or_external_commands",
+        "external_control_note": "External controller may command roll/pitch/yaw/panel_rotation. Simulation reports resulting geometry but does not optimize it internally."
+      },
+      "solar_panel_system": {
+        "schema": "satellite_simulation.solar_panel_system.v1",
+        "in_sunlight": true,
+        "in_eclipse": false,
+        "sun_vector_eci": {
+          "x": -0.9999999727737664,
+          "y": -0.00018278542434507647,
+          "z": -0.00014505845364696848
+        },
+        "panel_normal_eci": {
+          "x": 0.4698408036905332,
+          "y": -0.6710141121694628,
+          "z": 0.5735762202679443
+        },
+        "sun_incidence_angle_deg": 118.02140194809628,
+        "panel_efficiency_factor": 0.0,
+        "solar_irradiance_w_m2": 1361.1893843430885,
+        "panel_area_m2": 4.0,
+        "panel_efficiency": 0.28,
+        "estimated_solar_generation_w": 0.0,
+        "max_solar_generation_w": 1524.3200000000002,
+        "recommended_panel_rotation_deg": 118.02140194809628,
+        "panel_rotation_rate_limit_deg_per_s": 1.2,
+        "solar_optimization_state": "poor_sun_alignment",
+        "charging_priority": "low",
+        "external_control_note": "External controller should use these values to command roll/panel attitude. The sim does not optimize automatically."
+      },
+      "voltage_sensors": {
+        "schema": "satellite_simulation.voltage_sensors.v1",
+        "solar_panel_voltage_v": 8.971290257981382,
+        "solar_panel_current_a": 0.0,
+        "battery_voltage_v": 28.26776381287113,
+        "bus_voltage_v": 27.86418311155313,
+        "bus_current_draw_a": 10.228184291605249,
+        "net_charge_current_a": -10.082155839657585,
+        "sensor_noise_fraction": 0.008
+      },
+      "power_system": {
+        "schema": "satellite_simulation.power_system.v1",
+        "battery_percent": 87.87349210295825,
+        "battery_capacity_wh": 1200.0,
+        "solar_generation_w": 0.0,
+        "load_w": 285.0,
+        "base_load_w": 260.0,
+        "rf_payload_load_w": 0.0,
+        "radiation_fault_load_w": 25.0,
+        "power_margin_w": -285.0,
+        "battery_charging_w": 0.0,
+        "battery_discharging_w": 285.0,
+        "power_risk_level": "critical"
+      },
+      "thermal_profile": {
+        "schema": "satellite_simulation.thermal_profile.v1",
+        "bus_temperature_c": 20.39930039470757,
+        "battery_temperature_c": 18.108162005460596,
+        "processor_temperature_c": 36.917589772622776,
+        "power_amp_temperature_c": 39.6012541350782,
+        "max_component_temperature_c": 39.6012541350782,
+        "thermal_risk_level": "low",
+        "thermal_fault_state": "nominal",
+        "in_sunlight": true,
+        "in_eclipse": false,
+        "thermal_inputs": {
+          "sunlight_heat_component_c": 0.0,
+          "electronics_heat_component_c": 9.975000000000001,
+          "radiation_storm_heat_component_c": 0.0,
+          "eclipse_cooling_component_c": 0.0
+        },
+        "temperature_sensor_noise_c": 0.25
+      },
+      "communication_link": {
+        "schema": "satellite_simulation.communication_link.v1",
+        "link_available": true,
+        "link_snr_db": 31.05483737778101,
+        "packet_loss_probability": 0.04,
+        "latency_ms": 44.492354636641856,
+        "rf_blackout_probability": 0.02,
+        "antenna_pointing_factor": 0.978951557407542,
+        "communication_risk_level": "low"
+      },
+      "radiation": {
+        "object_id": "SAT-3",
+        "object_type": "satellite",
+        "central_body": "Earth",
+        "radiation_region": "outer_van_allen_region",
+        "position_m_eci": {
+          "x": -10410459.400721658,
+          "y": 11258674.425042799,
+          "z": 21698926.132840306
+        },
+        "speed_mps": 3873.265226867594,
+        "mass_kg": 500.0,
+        "shielding_mm_aluminum": 2.5,
+        "shielding_factor": 0.7807091821557101,
+        "baseline_dose_rate_msv_per_day": 14.4,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 11.242212223042225,
+        "particle_flux_pfu_gt_10mev": 951.0,
+        "particle_flux_pfu": 951.0,
+        "estimated_single_event_upset_rate_per_day": 0.013180961649051448,
+        "single_event_upset_probability_per_day": 0.013180961649051448,
+        "solar_panel_degradation_fraction_per_day": 0.0008993769778433781,
+        "communications_blackout_probability": 0.02,
+        "radiation_risk_level": "high",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": true,
+          "critical_dose_rate": false,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.0702638263940139,
+        "electronics_health_percent": 99.79147466095303,
+        "radiation_fault_state": "degraded",
+        "radiation_fault_active": true
+      },
+      "sensor_fusion_state": {
+        "schema": "satellite_simulation.sensor_fusion_state.v1",
+        "collision_risk_score": 0.08,
+        "radiation_risk_score": 0.75,
+        "thermal_risk_score": 0.15,
+        "power_risk_score": 0.95,
+        "communication_risk_score": 0.15,
+        "solar_charging_score": 0.0,
+        "fused_health_score": 0.5757469842059165,
+        "overall_operational_risk_score": 0.37560000000000004,
+        "confidence": 0.72,
+        "recommended_external_action": "radiation_safe_mode_or_asset_switch",
+        "candidate_external_actions": [
+          "radiation_safe_mode_or_asset_switch"
+        ],
+        "router_layer_included_in_simulation": false
+      }
+    },
+    {
+      "id": "SAT-4",
+      "type": "satellite",
+      "active": true,
+      "selected_for_data": false,
+      "position_m_eci": {
+        "x": 9759835.976727402,
+        "y": 20324433.92932621,
+        "z": -16383462.40136431
+      },
+      "velocity_mps_eci": {
+        "x": -3051.9482072497394,
+        "y": -316.5586945699662,
+        "z": -2210.792106821927
+      },
+      "speed_mps": 3781.8248249263047,
+      "distance_from_earth_center_m": 27870322.084559537,
+      "altitude_m": 21499313.68455954,
+      "altitude_km": 21499.31368455954,
+      "specific_orbital_energy_j_per_kg": -7150868.037405733,
+      "central_body": "Earth",
+      "measurement_timestamp": {
+        "unix_time_s": 1777860878.888942,
+        "utc_iso": "2026-05-04T02:14:38.888942+00:00",
+        "simulation_visual_time_s": 0.9,
+        "simulation_physical_time_s": 540.0,
+        "frame": 108,
+        "sample_hz": 10.0,
+        "base_sample_hz": 10.0,
+        "speed_multiplier": 1.0
+      },
+      "mass_kg": 500.0,
+      "physical_radius_m": 1.5,
+      "can_maneuver": true,
+      "destroyed": false,
+      "orbit_class": "MEO",
+      "orbit_description": "MEO circular orbit, altitude 21500 km",
+      "environment_vectors": {
+        "schema": "satellite_simulation.environment_vectors.v2",
+        "object_id": "SAT-4",
+        "object_type": "satellite",
+        "central_body": "Earth",
+        "sun_position_m_eci": {
+          "x": -149597869835.39383,
+          "y": -16083733.55813077,
+          "z": -0.0
+        },
+        "sun_vector_from_object_eci": {
+          "x": -0.9999999643923492,
+          "y": -0.0002433576835019856,
+          "z": 0.00010950953406571416
+        },
+        "earth_vector_from_object_eci": {
+          "x": -0.350187412514133,
+          "y": -0.7292500555846166,
+          "z": 0.5878461810256914
+        },
+        "nadir_vector_eci": {
+          "x": -0.350187412514133,
+          "y": -0.7292500555846166,
+          "z": 0.5878461810256914
+        },
+        "velocity_unit_vector_eci": {
+          "x": -0.8070041179946011,
+          "y": -0.08370527700899918,
+          "z": -0.5845834244490709
+        },
+        "distance_to_sun_m": 149607634998.54697,
+        "distance_to_earth_center_m": 27870322.084559537,
+        "altitude_over_earth_m": 21499313.68455954,
+        "solar_irradiance_w_m2": 1360.8223516245616,
+        "solar_irradiance_without_eclipse_w_m2": 1360.8223516245616,
+        "earth_heliocentric_position_m": {
+          "x": 149597869835.39383,
+          "y": 16083733.55813077,
+          "z": 0.0
+        },
+        "earth_heliocentric_velocity_mps": {
+          "x": -3.2022450940676745,
+          "y": 29784.691659555127,
+          "z": 0.0
+        },
+        "earth_orbital_true_anomaly_rad": 0.00010751311842780309,
+        "earth_orbital_speed_mps": 29784.691831696804,
+        "earth_orbital_angular_rate_rad_s": 1.990983674588946e-07,
+        "earth_rotation_rate_rad_s": 7.2921159e-05,
+        "external_control_note": "External controller can use sun/nadir/velocity vectors for roll, attitude, antenna, and solar panel optimization. The sim does not choose the control action."
+      },
+      "sunlight_state": {
+        "in_sunlight": true,
+        "in_eclipse": false,
+        "eclipse_body": null,
+        "nearest_shadow_body": "Earth",
+        "sun_exposure_factor": 1.0,
+        "shadow_margin_m": null,
+        "distance_to_shadow_axis_m": null,
+        "model_type": "cylindrical_earth_shadow_geometry",
+        "used_for": [
+          "solar_panel_power_inputs",
+          "thermal_sensor_inputs",
+          "radiation_sun_exposure_inputs"
+        ]
+      },
+      "attitude_state": {
+        "schema": "satellite_simulation.attitude_state.v1",
+        "roll_deg": 0.0,
+        "pitch_deg": 0.0,
+        "yaw_deg": 7.647782513979031,
+        "panel_rotation_deg": 0.0,
+        "angular_rate_dps": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "angular_rate_magnitude_dps": 0.0,
+        "attitude_stability": "stable",
+        "panel_normal_eci": {
+          "x": -0.47551332219480114,
+          "y": 0.679108045641651,
+          "z": 0.5591952635350559
+        },
+        "antenna_normal_eci": {
+          "x": -0.35335314181189337,
+          "y": -0.724701515665041,
+          "z": 0.5915651023889563
+        },
+        "attitude_control_source": "default_simulated_attitude_or_external_commands",
+        "external_control_note": "External controller may command roll/pitch/yaw/panel_rotation. Simulation reports resulting geometry but does not optimize it internally."
+      },
+      "solar_panel_system": {
+        "schema": "satellite_simulation.solar_panel_system.v1",
+        "in_sunlight": true,
+        "in_eclipse": false,
+        "sun_vector_eci": {
+          "x": -0.9999999643923492,
+          "y": -0.0002433576835019856,
+          "z": 0.00010950953406571416
+        },
+        "panel_normal_eci": {
+          "x": -0.47551332219480114,
+          "y": 0.679108045641651,
+          "z": 0.5591952635350559
+        },
+        "sun_incidence_angle_deg": 61.61399868868463,
+        "panel_efficiency_factor": 0.4754092763148154,
+        "solar_irradiance_w_m2": 1360.8223516245616,
+        "panel_area_m2": 4.0,
+        "panel_efficiency": 0.28,
+        "estimated_solar_generation_w": 724.5772047560727,
+        "max_solar_generation_w": 1524.3200000000002,
+        "recommended_panel_rotation_deg": 61.61399868868463,
+        "panel_rotation_rate_limit_deg_per_s": 1.2,
+        "solar_optimization_state": "poor_sun_alignment",
+        "charging_priority": "low",
+        "external_control_note": "External controller should use these values to command roll/panel attitude. The sim does not optimize automatically."
+      },
+      "voltage_sensors": {
+        "schema": "satellite_simulation.voltage_sensors.v1",
+        "solar_panel_voltage_v": 21.94131714094195,
+        "solar_panel_current_a": 33.02341423268659,
+        "battery_voltage_v": 28.37160813061732,
+        "bus_voltage_v": 27.898975856991463,
+        "bus_current_draw_a": 10.215428747667783,
+        "net_charge_current_a": 15.493559714075614,
+        "sensor_noise_fraction": 0.008
+      },
+      "power_system": {
+        "schema": "satellite_simulation.power_system.v1",
+        "battery_percent": 90.97998723138083,
+        "battery_capacity_wh": 1200.0,
+        "solar_generation_w": 724.5772047560727,
+        "load_w": 285.0,
+        "base_load_w": 260.0,
+        "rf_payload_load_w": 0.0,
+        "radiation_fault_load_w": 25.0,
+        "power_margin_w": 439.57720475607266,
+        "battery_charging_w": 439.57720475607266,
+        "battery_discharging_w": 0.0,
+        "power_risk_level": "low"
+      },
+      "thermal_profile": {
+        "schema": "satellite_simulation.thermal_profile.v1",
+        "bus_temperature_c": 23.342176949205744,
+        "battery_temperature_c": 19.276578295879638,
+        "processor_temperature_c": 38.20474936469092,
+        "power_amp_temperature_c": 41.781364691793,
+        "max_component_temperature_c": 41.781364691793,
+        "thermal_risk_level": "low",
+        "thermal_fault_state": "nominal",
+        "in_sunlight": true,
+        "in_eclipse": false,
+        "thermal_inputs": {
+          "sunlight_heat_component_c": 5.704911315777784,
+          "electronics_heat_component_c": 9.975000000000001,
+          "radiation_storm_heat_component_c": 0.0,
+          "eclipse_cooling_component_c": 0.0
+        },
+        "temperature_sensor_noise_c": 0.25
+      },
+      "communication_link": {
+        "schema": "satellite_simulation.communication_link.v1",
+        "link_available": true,
+        "link_snr_db": 31.559465502798087,
+        "packet_loss_probability": 0.04,
+        "latency_ms": 42.572842745288135,
+        "rf_blackout_probability": 0.02,
+        "antenna_pointing_factor": 0.9999777292832537,
+        "communication_risk_level": "low"
+      },
+      "radiation": {
+        "object_id": "SAT-4",
+        "object_type": "satellite",
+        "central_body": "Earth",
+        "radiation_region": "outer_van_allen_region",
+        "position_m_eci": {
+          "x": 9759835.976727402,
+          "y": 20324433.92932621,
+          "z": -16383462.40136431
+        },
+        "speed_mps": 3781.8248249263047,
+        "mass_kg": 500.0,
+        "shielding_mm_aluminum": 2.5,
+        "shielding_factor": 0.7807091821557101,
+        "baseline_dose_rate_msv_per_day": 14.4,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 11.242212223042225,
+        "particle_flux_pfu_gt_10mev": 951.0,
+        "particle_flux_pfu": 951.0,
+        "estimated_single_event_upset_rate_per_day": 0.013180961649051448,
+        "single_event_upset_probability_per_day": 0.013180961649051448,
+        "solar_panel_degradation_fraction_per_day": 0.0008993769778433781,
+        "communications_blackout_probability": 0.02,
+        "radiation_risk_level": "high",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": true,
+          "critical_dose_rate": false,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.0702638263940139,
+        "electronics_health_percent": 99.79147466095303,
+        "radiation_fault_state": "degraded",
+        "radiation_fault_active": true
+      },
+      "sensor_fusion_state": {
+        "schema": "satellite_simulation.sensor_fusion_state.v1",
+        "collision_risk_score": 0.08,
+        "radiation_risk_score": 0.75,
+        "thermal_risk_score": 0.15,
+        "power_risk_score": 0.15,
+        "communication_risk_score": 0.15,
+        "solar_charging_score": 0.4754092763148154,
+        "fused_health_score": 0.7419599744627616,
+        "overall_operational_risk_score": 0.24760000000000001,
+        "confidence": 0.72,
+        "recommended_external_action": "radiation_safe_mode_or_asset_switch",
+        "candidate_external_actions": [
+          "radiation_safe_mode_or_asset_switch"
+        ],
+        "router_layer_included_in_simulation": false
+      }
+    },
+    {
+      "id": "SAT-5",
+      "type": "satellite",
+      "active": true,
+      "selected_for_data": false,
+      "position_m_eci": {
+        "x": 4377132.236170495,
+        "y": 3668120.214194362,
+        "z": -5706426.824252175
+      },
+      "velocity_mps_eci": {
+        "x": 1464.111101328634,
+        "y": 8507.676199268893,
+        "z": 3070.0323779329415
+      },
+      "speed_mps": 9162.38366530221,
+      "distance_from_earth_center_m": 8073270.689085619,
+      "altitude_m": 1702262.2890856182,
+      "altitude_km": 1702.2622890856182,
+      "specific_orbital_energy_j_per_kg": -7398220.100199394,
+      "central_body": "Earth",
+      "measurement_timestamp": {
+        "unix_time_s": 1777860878.888942,
+        "utc_iso": "2026-05-04T02:14:38.888942+00:00",
+        "simulation_visual_time_s": 0.9,
+        "simulation_physical_time_s": 540.0,
+        "frame": 108,
+        "sample_hz": 10.0,
+        "base_sample_hz": 10.0,
+        "speed_multiplier": 1.0
+      },
+      "mass_kg": 500.0,
+      "physical_radius_m": 1.5,
+      "can_maneuver": true,
+      "destroyed": false,
+      "orbit_class": "HEO",
+      "orbit_description": "highly elliptical orbit, perigee 1000 km, apogee 39700 km",
+      "environment_vectors": {
+        "schema": "satellite_simulation.environment_vectors.v2",
+        "object_id": "SAT-5",
+        "object_type": "satellite",
+        "central_body": "Earth",
+        "sun_position_m_eci": {
+          "x": -149597869835.39383,
+          "y": -16083733.55813077,
+          "z": -0.0
+        },
+        "sun_vector_from_object_eci": {
+          "x": -0.9999999905566732,
+          "y": -0.0001320291238010329,
+          "z": 3.8143991056492905e-05
+        },
+        "earth_vector_from_object_eci": {
+          "x": -0.5421758299381697,
+          "y": -0.4543536759089908,
+          "z": 0.7068296163990616
+        },
+        "nadir_vector_eci": {
+          "x": -0.5421758299381697,
+          "y": -0.4543536759089908,
+          "z": 0.7068296163990616
+        },
+        "velocity_unit_vector_eci": {
+          "x": 0.1597958735206863,
+          "y": 0.9285439804804636,
+          "z": 0.3350691796021489
+        },
+        "distance_to_sun_m": 149602248380.37292,
+        "distance_to_earth_center_m": 8073270.689085619,
+        "altitude_over_earth_m": 1702262.2890856182,
+        "solar_irradiance_w_m2": 1360.9203496487542,
+        "solar_irradiance_without_eclipse_w_m2": 1360.9203496487542,
+        "earth_heliocentric_position_m": {
+          "x": 149597869835.39383,
+          "y": 16083733.55813077,
+          "z": 0.0
+        },
+        "earth_heliocentric_velocity_mps": {
+          "x": -3.2022450940676745,
+          "y": 29784.691659555127,
+          "z": 0.0
+        },
+        "earth_orbital_true_anomaly_rad": 0.00010751311842780309,
+        "earth_orbital_speed_mps": 29784.691831696804,
+        "earth_orbital_angular_rate_rad_s": 1.990983674588946e-07,
+        "earth_rotation_rate_rad_s": 7.2921159e-05,
+        "external_control_note": "External controller can use sun/nadir/velocity vectors for roll, attitude, antenna, and solar panel optimization. The sim does not choose the control action."
+      },
+      "sunlight_state": {
+        "in_sunlight": true,
+        "in_eclipse": false,
+        "eclipse_body": null,
+        "nearest_shadow_body": "Earth",
+        "sun_exposure_factor": 1.0,
+        "shadow_margin_m": null,
+        "distance_to_shadow_axis_m": null,
+        "model_type": "cylindrical_earth_shadow_geometry",
+        "used_for": [
+          "solar_panel_power_inputs",
+          "thermal_sensor_inputs",
+          "radiation_sun_exposure_inputs"
+        ]
+      },
+      "attitude_state": {
+        "schema": "satellite_simulation.attitude_state.v1",
+        "roll_deg": 0.0,
+        "pitch_deg": 0.0,
+        "yaw_deg": 268.66882784576404,
+        "panel_rotation_deg": 0.0,
+        "angular_rate_dps": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "angular_rate_magnitude_dps": 0.0,
+        "attitude_stability": "stable",
+        "panel_normal_eci": {
+          "x": 0.8401647756449133,
+          "y": -0.306129822708,
+          "z": 0.4476691651368242
+        },
+        "antenna_normal_eci": {
+          "x": -0.3406882824632286,
+          "y": -0.5172685145251554,
+          "z": 0.7850890255717466
+        },
+        "attitude_control_source": "default_simulated_attitude_or_external_commands",
+        "external_control_note": "External controller may command roll/pitch/yaw/panel_rotation. Simulation reports resulting geometry but does not optimize it internally."
+      },
+      "solar_panel_system": {
+        "schema": "satellite_simulation.solar_panel_system.v1",
+        "in_sunlight": true,
+        "in_eclipse": false,
+        "sun_vector_eci": {
+          "x": -0.9999999905566732,
+          "y": -0.0001320291238010329,
+          "z": 3.8143991056492905e-05
+        },
+        "panel_normal_eci": {
+          "x": 0.8401647756449133,
+          "y": -0.306129822708,
+          "z": 0.4476691651368242
+        },
+        "sun_incidence_angle_deg": 147.15144919969234,
+        "panel_efficiency_factor": 0.0,
+        "solar_irradiance_w_m2": 1360.9203496487542,
+        "panel_area_m2": 4.0,
+        "panel_efficiency": 0.28,
+        "estimated_solar_generation_w": 0.0,
+        "max_solar_generation_w": 1524.3200000000002,
+        "recommended_panel_rotation_deg": 147.15144919969234,
+        "panel_rotation_rate_limit_deg_per_s": 1.2,
+        "solar_optimization_state": "poor_sun_alignment",
+        "charging_priority": "low",
+        "external_control_note": "External controller should use these values to command roll/panel attitude. The sim does not optimize automatically."
+      },
+      "voltage_sensors": {
+        "schema": "satellite_simulation.voltage_sensors.v1",
+        "solar_panel_voltage_v": 8.93594964753031,
+        "solar_panel_current_a": 0.0,
+        "battery_voltage_v": 28.064356516818393,
+        "bus_voltage_v": 27.803527376808212,
+        "bus_current_draw_a": 10.250497936377934,
+        "net_charge_current_a": -10.155230169956162,
+        "sensor_noise_fraction": 0.008
+      },
+      "power_system": {
+        "schema": "satellite_simulation.power_system.v1",
+        "battery_percent": 82.45780150073308,
+        "battery_capacity_wh": 1200.0,
+        "solar_generation_w": 0.0,
+        "load_w": 285.0,
+        "base_load_w": 260.0,
+        "rf_payload_load_w": 0.0,
+        "radiation_fault_load_w": 25.0,
+        "power_margin_w": -285.0,
+        "battery_charging_w": 0.0,
+        "battery_discharging_w": 285.0,
+        "power_risk_level": "critical"
+      },
+      "thermal_profile": {
+        "schema": "satellite_simulation.thermal_profile.v1",
+        "bus_temperature_c": 21.394946775821392,
+        "battery_temperature_c": 18.615732916780992,
+        "processor_temperature_c": 36.7484504494355,
+        "power_amp_temperature_c": 40.88019028089086,
+        "max_component_temperature_c": 40.88019028089086,
+        "thermal_risk_level": "low",
+        "thermal_fault_state": "nominal",
+        "in_sunlight": true,
+        "in_eclipse": false,
+        "thermal_inputs": {
+          "sunlight_heat_component_c": 0.0,
+          "electronics_heat_component_c": 9.975000000000001,
+          "radiation_storm_heat_component_c": 0.0,
+          "eclipse_cooling_component_c": 0.0
+        },
+        "temperature_sensor_noise_c": 0.25
+      },
+      "communication_link": {
+        "schema": "satellite_simulation.communication_link.v1",
+        "link_available": true,
+        "link_snr_db": 30.951839474044533,
+        "packet_loss_probability": 0.04,
+        "latency_ms": 42.02835021617385,
+        "rf_blackout_probability": 0.02,
+        "antenna_pointing_factor": 0.9746599780851889,
+        "communication_risk_level": "low"
+      },
+      "radiation": {
+        "object_id": "SAT-5",
+        "object_type": "satellite",
+        "central_body": "Earth",
+        "radiation_region": "inner_van_allen_region",
+        "position_m_eci": {
+          "x": 4377132.236170495,
+          "y": 3668120.214194362,
+          "z": -5706426.824252175
+        },
+        "speed_mps": 9162.38366530221,
+        "mass_kg": 500.0,
+        "shielding_mm_aluminum": 2.5,
+        "shielding_factor": 0.7807091821557101,
+        "baseline_dose_rate_msv_per_day": 32.4,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 25.294977501845004,
+        "particle_flux_pfu_gt_10mev": 2501.0,
+        "particle_flux_pfu": 2501.0,
+        "estimated_single_event_upset_rate_per_day": 0.029637645980811866,
+        "single_event_upset_probability_per_day": 0.029637645980811866,
+        "solar_panel_degradation_fraction_per_day": 0.0020235982001476005,
+        "communications_blackout_probability": 0.02,
+        "radiation_risk_level": "critical",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": true,
+          "critical_dose_rate": true,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.15809360938653128,
+        "electronics_health_percent": 99.53103756160178,
+        "radiation_fault_state": "critical_fault_risk",
+        "radiation_fault_active": true
+      },
+      "sensor_fusion_state": {
+        "schema": "satellite_simulation.sensor_fusion_state.v1",
+        "collision_risk_score": 0.08,
+        "radiation_risk_score": 0.95,
+        "thermal_risk_score": 0.15,
+        "power_risk_score": 0.95,
+        "communication_risk_score": 0.15,
+        "solar_charging_score": 0.0,
+        "fused_health_score": 0.5249156030014662,
+        "overall_operational_risk_score": 0.4156,
+        "confidence": 0.72,
+        "recommended_external_action": "radiation_safe_mode_or_asset_switch",
+        "candidate_external_actions": [
+          "radiation_safe_mode_or_asset_switch"
+        ],
+        "router_layer_included_in_simulation": false
+      }
+    },
+    {
+      "id": "SAT-6",
+      "type": "satellite",
+      "active": true,
+      "selected_for_data": false,
+      "position_m_eci": {
+        "x": 6186528.956892736,
+        "y": -20614109.047916017,
+        "z": 25688562.06880211
+      },
+      "velocity_mps_eci": {
+        "x": 1468.2359620288305,
+        "y": 259.00016017722265,
+        "z": 2578.263440623193
+      },
+      "speed_mps": 2978.2948632431776,
+      "distance_from_earth_center_m": 33512935.615021016,
+      "altitude_m": 27141927.215021014,
+      "altitude_km": 27141.927215021013,
+      "specific_orbital_energy_j_per_kg": -7458807.809815715,
+      "central_body": "Earth",
+      "measurement_timestamp": {
+        "unix_time_s": 1777860878.888942,
+        "utc_iso": "2026-05-04T02:14:38.888942+00:00",
+        "simulation_visual_time_s": 0.9,
+        "simulation_physical_time_s": 540.0,
+        "frame": 108,
+        "sample_hz": 10.0,
+        "base_sample_hz": 10.0,
+        "speed_multiplier": 1.0
+      },
+      "mass_kg": 500.0,
+      "physical_radius_m": 1.5,
+      "can_maneuver": true,
+      "destroyed": false,
+      "orbit_class": "HEO",
+      "orbit_description": "highly elliptical orbit, perigee 1000 km, apogee 39700 km",
+      "environment_vectors": {
+        "schema": "satellite_simulation.environment_vectors.v2",
+        "object_id": "SAT-6",
+        "object_type": "satellite",
+        "central_body": "Earth",
+        "sun_position_m_eci": {
+          "x": -149597869835.39383,
+          "y": -16083733.55813077,
+          "z": -0.0
+        },
+        "sun_vector_from_object_eci": {
+          "x": -0.9999999847992683,
+          "y": 3.0282437060976453e-05,
+          "z": -0.00017171032860067905
+        },
+        "earth_vector_from_object_eci": {
+          "x": -0.18460122467217818,
+          "y": 0.6151090219227603,
+          "z": -0.7665267633936581
+        },
+        "nadir_vector_eci": {
+          "x": -0.18460122467217818,
+          "y": 0.6151090219227603,
+          "z": -0.7665267633936581
+        },
+        "velocity_unit_vector_eci": {
+          "x": 0.49297871078823036,
+          "y": 0.08696256484664773,
+          "z": 0.8656844130656778
+        },
+        "distance_to_sun_m": 149604058638.44186,
+        "distance_to_earth_center_m": 33512935.615021016,
+        "altitude_over_earth_m": 27141927.215021014,
+        "solar_irradiance_w_m2": 1360.8874146848066,
+        "solar_irradiance_without_eclipse_w_m2": 1360.8874146848066,
+        "earth_heliocentric_position_m": {
+          "x": 149597869835.39383,
+          "y": 16083733.55813077,
+          "z": 0.0
+        },
+        "earth_heliocentric_velocity_mps": {
+          "x": -3.2022450940676745,
+          "y": 29784.691659555127,
+          "z": 0.0
+        },
+        "earth_orbital_true_anomaly_rad": 0.00010751311842780309,
+        "earth_orbital_speed_mps": 29784.691831696804,
+        "earth_orbital_angular_rate_rad_s": 1.990983674588946e-07,
+        "earth_rotation_rate_rad_s": 7.2921159e-05,
+        "external_control_note": "External controller can use sun/nadir/velocity vectors for roll, attitude, antenna, and solar panel optimization. The sim does not choose the control action."
+      },
+      "sunlight_state": {
+        "in_sunlight": true,
+        "in_eclipse": false,
+        "eclipse_body": null,
+        "nearest_shadow_body": "Earth",
+        "sun_exposure_factor": 1.0,
+        "shadow_margin_m": null,
+        "distance_to_shadow_axis_m": null,
+        "model_type": "cylindrical_earth_shadow_geometry",
+        "used_for": [
+          "solar_panel_power_inputs",
+          "thermal_sensor_inputs",
+          "radiation_sun_exposure_inputs"
+        ]
+      },
+      "attitude_state": {
+        "schema": "satellite_simulation.attitude_state.v1",
+        "roll_deg": 0.0,
+        "pitch_deg": 0.0,
+        "yaw_deg": 122.91244102490622,
+        "panel_rotation_deg": 0.0,
+        "angular_rate_dps": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "angular_rate_magnitude_dps": 0.0,
+        "attitude_stability": "stable",
+        "panel_normal_eci": {
+          "x": -0.8402282121310888,
+          "y": 0.3058214470977174,
+          "z": 0.4477608670194978
+        },
+        "antenna_normal_eci": {
+          "x": -0.24966900369620193,
+          "y": 0.6345698050478713,
+          "z": -0.7314277483899915
+        },
+        "attitude_control_source": "default_simulated_attitude_or_external_commands",
+        "external_control_note": "External controller may command roll/pitch/yaw/panel_rotation. Simulation reports resulting geometry but does not optimize it internally."
+      },
+      "solar_panel_system": {
+        "schema": "satellite_simulation.solar_panel_system.v1",
+        "in_sunlight": true,
+        "in_eclipse": false,
+        "sun_vector_eci": {
+          "x": -0.9999999847992683,
+          "y": 3.0282437060976453e-05,
+          "z": -0.00017171032860067905
+        },
+        "panel_normal_eci": {
+          "x": -0.8402282121310888,
+          "y": 0.3058214470977174,
+          "z": 0.4477608670194978
+        },
+        "sun_incidence_angle_deg": 32.842920147879695,
+        "panel_efficiency_factor": 0.8401605752121184,
+        "solar_irradiance_w_m2": 1360.8874146848066,
+        "panel_area_m2": 4.0,
+        "panel_efficiency": 0.28,
+        "estimated_solar_generation_w": 1280.560429288465,
+        "max_solar_generation_w": 1524.3200000000002,
+        "recommended_panel_rotation_deg": 32.842920147879695,
+        "panel_rotation_rate_limit_deg_per_s": 1.2,
+        "solar_optimization_state": "suboptimal_angle",
+        "charging_priority": "low",
+        "external_control_note": "External controller should use these values to command roll/panel attitude. The sim does not optimize automatically."
+      },
+      "voltage_sensors": {
+        "schema": "satellite_simulation.voltage_sensors.v1",
+        "solar_panel_voltage_v": 31.628935873520135,
+        "solar_panel_current_a": 40.486990596498536,
+        "battery_voltage_v": 28.29575292881605,
+        "bus_voltage_v": 27.9237302229474,
+        "bus_current_draw_a": 10.206372777724027,
+        "net_charge_current_a": 35.18409394487603,
+        "sensor_noise_fraction": 0.008
+      },
+      "power_system": {
+        "schema": "satellite_simulation.power_system.v1",
+        "battery_percent": 93.1901984774465,
+        "battery_capacity_wh": 1200.0,
+        "solar_generation_w": 1280.560429288465,
+        "load_w": 285.0,
+        "base_load_w": 260.0,
+        "rf_payload_load_w": 0.0,
+        "radiation_fault_load_w": 25.0,
+        "power_margin_w": 995.560429288465,
+        "battery_charging_w": 995.560429288465,
+        "battery_discharging_w": 0.0,
+        "power_risk_level": "low"
+      },
+      "thermal_profile": {
+        "schema": "satellite_simulation.thermal_profile.v1",
+        "bus_temperature_c": 23.707288498551836,
+        "battery_temperature_c": 19.939136362183635,
+        "processor_temperature_c": 40.008320893800544,
+        "power_amp_temperature_c": 43.15047878119048,
+        "max_component_temperature_c": 43.15047878119048,
+        "thermal_risk_level": "low",
+        "thermal_fault_state": "nominal",
+        "in_sunlight": true,
+        "in_eclipse": false,
+        "thermal_inputs": {
+          "sunlight_heat_component_c": 10.08192690254542,
+          "electronics_heat_component_c": 9.975000000000001,
+          "radiation_storm_heat_component_c": 0.0,
+          "eclipse_cooling_component_c": 0.0
+        },
+        "temperature_sensor_noise_c": 0.25
+      },
+      "communication_link": {
+        "schema": "satellite_simulation.communication_link.v1",
+        "link_available": true,
+        "link_snr_db": 31.489866254385728,
+        "packet_loss_probability": 0.04,
+        "latency_ms": 46.84997984372402,
+        "rf_blackout_probability": 0.02,
+        "antenna_pointing_factor": 0.9970777605994054,
+        "communication_risk_level": "low"
+      },
+      "radiation": {
+        "object_id": "SAT-6",
+        "object_type": "satellite",
+        "central_body": "Earth",
+        "radiation_region": "outer_van_allen_region",
+        "position_m_eci": {
+          "x": 6186528.956892736,
+          "y": -20614109.047916017,
+          "z": 25688562.06880211
+        },
+        "speed_mps": 2978.2948632431776,
+        "mass_kg": 500.0,
+        "shielding_mm_aluminum": 2.5,
+        "shielding_factor": 0.7807091821557101,
+        "baseline_dose_rate_msv_per_day": 14.4,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 11.242212223042225,
+        "particle_flux_pfu_gt_10mev": 951.0,
+        "particle_flux_pfu": 951.0,
+        "estimated_single_event_upset_rate_per_day": 0.013180961649051448,
+        "single_event_upset_probability_per_day": 0.013180961649051448,
+        "solar_panel_degradation_fraction_per_day": 0.0008993769778433781,
+        "communications_blackout_probability": 0.02,
+        "radiation_risk_level": "high",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": true,
+          "critical_dose_rate": false,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.0702638263940139,
+        "electronics_health_percent": 99.79147466095303,
+        "radiation_fault_state": "degraded",
+        "radiation_fault_active": true
+      },
+      "sensor_fusion_state": {
+        "schema": "satellite_simulation.sensor_fusion_state.v1",
+        "collision_risk_score": 0.08,
+        "radiation_risk_score": 0.75,
+        "thermal_risk_score": 0.15,
+        "power_risk_score": 0.15,
+        "communication_risk_score": 0.15,
+        "solar_charging_score": 0.8401605752121184,
+        "fused_health_score": 0.746380396954893,
+        "overall_operational_risk_score": 0.24760000000000001,
+        "confidence": 0.72,
+        "recommended_external_action": "radiation_safe_mode_or_asset_switch",
+        "candidate_external_actions": [
+          "radiation_safe_mode_or_asset_switch"
+        ],
+        "router_layer_included_in_simulation": false
+      }
+    }
+  ],
+  "spacecraft": [],
+  "asteroids": [
+    {
+      "id": "AST-1",
+      "type": "asteroid",
+      "active": true,
+      "selected_for_data": false,
+      "position_m_eci": {
+        "x": -6589966.242835155,
+        "y": 865907.0007206282,
+        "z": -2379094.013927391
+      },
+      "velocity_mps_eci": {
+        "x": 2698.1697230097125,
+        "y": 2400.8246199344544,
+        "z": -6595.342985660252
+      },
+      "speed_mps": 7519.483214180853,
+      "distance_from_earth_center_m": 7059570.69110502,
+      "altitude_m": 688562.2911050199,
+      "altitude_km": 688.5622911050199,
+      "specific_orbital_energy_j_per_kg": -28191105.588591114,
+      "central_body": "Earth",
+      "measurement_timestamp": {
+        "unix_time_s": 1777860878.888942,
+        "utc_iso": "2026-05-04T02:14:38.888942+00:00",
+        "simulation_visual_time_s": 0.9,
+        "simulation_physical_time_s": 540.0,
+        "frame": 108,
+        "sample_hz": 10.0,
+        "base_sample_hz": 10.0,
+        "speed_multiplier": 1.0
+      },
+      "mass_kg": 1000.0,
+      "physical_radius_m": 2.0,
+      "collision_threat": true,
+      "orbit_class": "LEO",
+      "orbit_description": "guaranteed retrograde collision-course orbit targeting SAT-2; predicted impact in about 18.0 visual seconds",
+      "radiation": {
+        "object_id": "AST-1",
+        "object_type": "asteroid",
+        "central_body": "Earth",
+        "radiation_region": "low_earth_orbit",
+        "position_m_eci": {
+          "x": -6589966.242835155,
+          "y": 865907.0007206282,
+          "z": -2379094.013927391
+        },
+        "speed_mps": 7519.483214180853,
+        "mass_kg": 1000.0,
+        "shielding_mm_aluminum": 0.0,
+        "shielding_factor": 1.0,
+        "baseline_dose_rate_msv_per_day": 0.35,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 0.35,
+        "particle_flux_pfu_gt_10mev": 36.0,
+        "particle_flux_pfu": 36.0,
+        "estimated_single_event_upset_rate_per_day": 0.000545,
+        "single_event_upset_probability_per_day": 0.000545,
+        "solar_panel_degradation_fraction_per_day": 2.8e-05,
+        "communications_blackout_probability": 0.011000000000000001,
+        "radiation_risk_level": "low",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": false,
+          "critical_dose_rate": false,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.0021875,
+        "electronics_health_percent": 99.99199333333337,
+        "radiation_fault_state": "nominal",
+        "radiation_fault_active": false
+      }
+    },
+    {
+      "id": "AST-2",
+      "type": "asteroid",
+      "active": true,
+      "selected_for_data": false,
+      "position_m_eci": {
+        "x": 5556214.535423215,
+        "y": -374996.32393710274,
+        "z": 4420225.317707877
+      },
+      "velocity_mps_eci": {
+        "x": -4078.0893220265734,
+        "y": -4077.95203745734,
+        "z": 4778.985953522584
+      },
+      "speed_mps": 7489.940726213779,
+      "distance_from_earth_center_m": 7109889.877200648,
+      "altitude_m": 738881.4772006478,
+      "altitude_km": 738.8814772006479,
+      "specific_orbital_energy_j_per_kg": -28013209.091692816,
+      "central_body": "Earth",
+      "measurement_timestamp": {
+        "unix_time_s": 1777860878.888942,
+        "utc_iso": "2026-05-04T02:14:38.888942+00:00",
+        "simulation_visual_time_s": 0.9,
+        "simulation_physical_time_s": 540.0,
+        "frame": 108,
+        "sample_hz": 10.0,
+        "base_sample_hz": 10.0,
+        "speed_multiplier": 1.0
+      },
+      "mass_kg": 1000.0,
+      "physical_radius_m": 2.0,
+      "collision_threat": true,
+      "orbit_class": "LEO",
+      "orbit_description": "LEO circular asteroid orbit, altitude 750 km",
+      "radiation": {
+        "object_id": "AST-2",
+        "object_type": "asteroid",
+        "central_body": "Earth",
+        "radiation_region": "low_earth_orbit",
+        "position_m_eci": {
+          "x": 5556214.535423215,
+          "y": -374996.32393710274,
+          "z": 4420225.317707877
+        },
+        "speed_mps": 7489.940726213779,
+        "mass_kg": 1000.0,
+        "shielding_mm_aluminum": 0.0,
+        "shielding_factor": 1.0,
+        "baseline_dose_rate_msv_per_day": 0.35,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 0.35,
+        "particle_flux_pfu_gt_10mev": 36.0,
+        "particle_flux_pfu": 36.0,
+        "estimated_single_event_upset_rate_per_day": 0.000545,
+        "single_event_upset_probability_per_day": 0.000545,
+        "solar_panel_degradation_fraction_per_day": 2.8e-05,
+        "communications_blackout_probability": 0.011000000000000001,
+        "radiation_risk_level": "low",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": false,
+          "critical_dose_rate": false,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.0021875,
+        "electronics_health_percent": 99.99199333333337,
+        "radiation_fault_state": "nominal",
+        "radiation_fault_active": false
+      }
+    },
+    {
+      "id": "AST-3",
+      "type": "asteroid",
+      "active": true,
+      "selected_for_data": false,
+      "position_m_eci": {
+        "x": -17904276.600703318,
+        "y": -1509151.6744262066,
+        "z": 19709447.031455796
+      },
+      "velocity_mps_eci": {
+        "x": 1216.836924669475,
+        "y": 3405.677897128495,
+        "z": 1366.1863508216811
+      },
+      "speed_mps": 3865.9797187000468,
+      "distance_from_earth_center_m": 26670263.62180692,
+      "altitude_m": 20299255.22180692,
+      "altitude_km": 20299.25522180692,
+      "specific_orbital_energy_j_per_kg": -7472601.038725459,
+      "central_body": "Earth",
+      "measurement_timestamp": {
+        "unix_time_s": 1777860878.888942,
+        "utc_iso": "2026-05-04T02:14:38.888942+00:00",
+        "simulation_visual_time_s": 0.9,
+        "simulation_physical_time_s": 540.0,
+        "frame": 108,
+        "sample_hz": 10.0,
+        "base_sample_hz": 10.0,
+        "speed_multiplier": 1.0
+      },
+      "mass_kg": 1000.0,
+      "physical_radius_m": 2.0,
+      "collision_threat": true,
+      "orbit_class": "MEO",
+      "orbit_description": "MEO circular asteroid orbit, altitude 20300 km",
+      "radiation": {
+        "object_id": "AST-3",
+        "object_type": "asteroid",
+        "central_body": "Earth",
+        "radiation_region": "outer_van_allen_region",
+        "position_m_eci": {
+          "x": -17904276.600703318,
+          "y": -1509151.6744262066,
+          "z": 19709447.031455796
+        },
+        "speed_mps": 3865.9797187000468,
+        "mass_kg": 1000.0,
+        "shielding_mm_aluminum": 0.0,
+        "shielding_factor": 1.0,
+        "baseline_dose_rate_msv_per_day": 14.4,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 14.4,
+        "particle_flux_pfu_gt_10mev": 951.0,
+        "particle_flux_pfu": 951.0,
+        "estimated_single_event_upset_rate_per_day": 0.02162,
+        "single_event_upset_probability_per_day": 0.02162,
+        "solar_panel_degradation_fraction_per_day": 0.001152,
+        "communications_blackout_probability": 0.02,
+        "radiation_risk_level": "high",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": true,
+          "critical_dose_rate": false,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.09,
+        "electronics_health_percent": 99.67961499999994,
+        "radiation_fault_state": "degraded",
+        "radiation_fault_active": true
+      }
+    },
+    {
+      "id": "AST-4",
+      "type": "asteroid",
+      "active": true,
+      "selected_for_data": false,
+      "position_m_eci": {
+        "x": -2601814.457915862,
+        "y": 16326310.6895024,
+        "z": -22561510.017224833
+      },
+      "velocity_mps_eci": {
+        "x": 2556.5772384851734,
+        "y": 2381.953175850861,
+        "z": 1428.8048301546885
+      },
+      "speed_mps": 3775.0856084279526,
+      "distance_from_earth_center_m": 27970334.16784499,
+      "altitude_m": 21599325.76784499,
+      "altitude_km": 21599.325767844988,
+      "specific_orbital_energy_j_per_kg": -7125193.056421163,
+      "central_body": "Earth",
+      "measurement_timestamp": {
+        "unix_time_s": 1777860878.888942,
+        "utc_iso": "2026-05-04T02:14:38.888942+00:00",
+        "simulation_visual_time_s": 0.9,
+        "simulation_physical_time_s": 540.0,
+        "frame": 108,
+        "sample_hz": 10.0,
+        "base_sample_hz": 10.0,
+        "speed_multiplier": 1.0
+      },
+      "mass_kg": 1000.0,
+      "physical_radius_m": 2.0,
+      "collision_threat": true,
+      "orbit_class": "MEO",
+      "orbit_description": "MEO circular asteroid orbit, altitude 21600 km",
+      "radiation": {
+        "object_id": "AST-4",
+        "object_type": "asteroid",
+        "central_body": "Earth",
+        "radiation_region": "outer_van_allen_region",
+        "position_m_eci": {
+          "x": -2601814.457915862,
+          "y": 16326310.6895024,
+          "z": -22561510.017224833
+        },
+        "speed_mps": 3775.0856084279526,
+        "mass_kg": 1000.0,
+        "shielding_mm_aluminum": 0.0,
+        "shielding_factor": 1.0,
+        "baseline_dose_rate_msv_per_day": 14.4,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 14.4,
+        "particle_flux_pfu_gt_10mev": 951.0,
+        "particle_flux_pfu": 951.0,
+        "estimated_single_event_upset_rate_per_day": 0.02162,
+        "single_event_upset_probability_per_day": 0.02162,
+        "solar_panel_degradation_fraction_per_day": 0.001152,
+        "communications_blackout_probability": 0.02,
+        "radiation_risk_level": "high",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": true,
+          "critical_dose_rate": false,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.09,
+        "electronics_health_percent": 99.67961499999994,
+        "radiation_fault_state": "degraded",
+        "radiation_fault_active": true
+      }
+    },
+    {
+      "id": "AST-5",
+      "type": "asteroid",
+      "active": true,
+      "selected_for_data": false,
+      "position_m_eci": {
+        "x": 2690177.025600126,
+        "y": 4086922.2493979363,
+        "z": -6062281.677379937
+      },
+      "velocity_mps_eci": {
+        "x": 2013.2943002544127,
+        "y": -8787.715724596574,
+        "z": -2472.2580641115974
+      },
+      "speed_mps": 9348.227721409208,
+      "distance_from_earth_center_m": 7790458.589684379,
+      "altitude_m": 1419450.189684379,
+      "altitude_km": 1419.450189684379,
+      "specific_orbital_energy_j_per_kg": -7470528.215462998,
+      "central_body": "Earth",
+      "measurement_timestamp": {
+        "unix_time_s": 1777860878.888942,
+        "utc_iso": "2026-05-04T02:14:38.888942+00:00",
+        "simulation_visual_time_s": 0.9,
+        "simulation_physical_time_s": 540.0,
+        "frame": 108,
+        "sample_hz": 10.0,
+        "base_sample_hz": 10.0,
+        "speed_multiplier": 1.0
+      },
+      "mass_kg": 1000.0,
+      "physical_radius_m": 2.0,
+      "collision_threat": true,
+      "orbit_class": "HEO",
+      "orbit_description": "HEO elliptical asteroid orbit, perigee 1000 km, apogee 39700 km",
+      "radiation": {
+        "object_id": "AST-5",
+        "object_type": "asteroid",
+        "central_body": "Earth",
+        "radiation_region": "inner_van_allen_region",
+        "position_m_eci": {
+          "x": 2690177.025600126,
+          "y": 4086922.2493979363,
+          "z": -6062281.677379937
+        },
+        "speed_mps": 9348.227721409208,
+        "mass_kg": 1000.0,
+        "shielding_mm_aluminum": 0.0,
+        "shielding_factor": 1.0,
+        "baseline_dose_rate_msv_per_day": 32.4,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 32.4,
+        "particle_flux_pfu_gt_10mev": 2501.0,
+        "particle_flux_pfu": 2501.0,
+        "estimated_single_event_upset_rate_per_day": 0.04862,
+        "single_event_upset_probability_per_day": 0.04862,
+        "solar_panel_degradation_fraction_per_day": 0.002592,
+        "communications_blackout_probability": 0.02,
+        "radiation_risk_level": "critical",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": true,
+          "critical_dose_rate": true,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.20249999999999996,
+        "electronics_health_percent": 99.27941499999996,
+        "radiation_fault_state": "critical_fault_risk",
+        "radiation_fault_active": true
+      }
+    },
+    {
+      "id": "AST-6",
+      "type": "asteroid",
+      "active": true,
+      "selected_for_data": false,
+      "position_m_eci": {
+        "x": 12013165.377282392,
+        "y": 17948888.365843177,
+        "z": 27022376.438536674
+      },
+      "velocity_mps_eci": {
+        "x": 1288.5574601149222,
+        "y": -727.5779481120045,
+        "z": 2436.749808111447
+      },
+      "speed_mps": 2850.8769924231856,
+      "distance_from_earth_center_m": 34593172.22137078,
+      "altitude_m": 28222163.82137078,
+      "altitude_km": 28222.16382137078,
+      "specific_orbital_energy_j_per_kg": -7458767.961620346,
+      "central_body": "Earth",
+      "measurement_timestamp": {
+        "unix_time_s": 1777860878.888942,
+        "utc_iso": "2026-05-04T02:14:38.888942+00:00",
+        "simulation_visual_time_s": 0.9,
+        "simulation_physical_time_s": 540.0,
+        "frame": 108,
+        "sample_hz": 10.0,
+        "base_sample_hz": 10.0,
+        "speed_multiplier": 1.0
+      },
+      "mass_kg": 1000.0,
+      "physical_radius_m": 2.0,
+      "collision_threat": true,
+      "orbit_class": "HEO",
+      "orbit_description": "HEO elliptical asteroid orbit, perigee 1000 km, apogee 39700 km",
+      "radiation": {
+        "object_id": "AST-6",
+        "object_type": "asteroid",
+        "central_body": "Earth",
+        "radiation_region": "outer_van_allen_region",
+        "position_m_eci": {
+          "x": 12013165.377282392,
+          "y": 17948888.365843177,
+          "z": 27022376.438536674
+        },
+        "speed_mps": 2850.8769924231856,
+        "mass_kg": 1000.0,
+        "shielding_mm_aluminum": 0.0,
+        "shielding_factor": 1.0,
+        "baseline_dose_rate_msv_per_day": 14.4,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 14.4,
+        "particle_flux_pfu_gt_10mev": 951.0,
+        "particle_flux_pfu": 951.0,
+        "estimated_single_event_upset_rate_per_day": 0.02162,
+        "single_event_upset_probability_per_day": 0.02162,
+        "solar_panel_degradation_fraction_per_day": 0.001152,
+        "communications_blackout_probability": 0.02,
+        "radiation_risk_level": "high",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": true,
+          "critical_dose_rate": false,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.09,
+        "electronics_health_percent": 99.67961499999994,
+        "radiation_fault_state": "degraded",
+        "radiation_fault_active": true
+      }
+    }
+  ],
+  "debris": [],
+  "hazards": [
+    {
+      "id": "AST-1",
+      "type": "asteroid",
+      "active": true,
+      "selected_for_data": false,
+      "position_m_eci": {
+        "x": -6589966.242835155,
+        "y": 865907.0007206282,
+        "z": -2379094.013927391
+      },
+      "velocity_mps_eci": {
+        "x": 2698.1697230097125,
+        "y": 2400.8246199344544,
+        "z": -6595.342985660252
+      },
+      "speed_mps": 7519.483214180853,
+      "distance_from_earth_center_m": 7059570.69110502,
+      "altitude_m": 688562.2911050199,
+      "altitude_km": 688.5622911050199,
+      "specific_orbital_energy_j_per_kg": -28191105.588591114,
+      "central_body": "Earth",
+      "measurement_timestamp": {
+        "unix_time_s": 1777860878.888942,
+        "utc_iso": "2026-05-04T02:14:38.888942+00:00",
+        "simulation_visual_time_s": 0.9,
+        "simulation_physical_time_s": 540.0,
+        "frame": 108,
+        "sample_hz": 10.0,
+        "base_sample_hz": 10.0,
+        "speed_multiplier": 1.0
+      },
+      "mass_kg": 1000.0,
+      "physical_radius_m": 2.0,
+      "collision_threat": true,
+      "orbit_class": "LEO",
+      "orbit_description": "guaranteed retrograde collision-course orbit targeting SAT-2; predicted impact in about 18.0 visual seconds",
+      "radiation": {
+        "object_id": "AST-1",
+        "object_type": "asteroid",
+        "central_body": "Earth",
+        "radiation_region": "low_earth_orbit",
+        "position_m_eci": {
+          "x": -6589966.242835155,
+          "y": 865907.0007206282,
+          "z": -2379094.013927391
+        },
+        "speed_mps": 7519.483214180853,
+        "mass_kg": 1000.0,
+        "shielding_mm_aluminum": 0.0,
+        "shielding_factor": 1.0,
+        "baseline_dose_rate_msv_per_day": 0.35,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 0.35,
+        "particle_flux_pfu_gt_10mev": 36.0,
+        "particle_flux_pfu": 36.0,
+        "estimated_single_event_upset_rate_per_day": 0.000545,
+        "single_event_upset_probability_per_day": 0.000545,
+        "solar_panel_degradation_fraction_per_day": 2.8e-05,
+        "communications_blackout_probability": 0.011000000000000001,
+        "radiation_risk_level": "low",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": false,
+          "critical_dose_rate": false,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.0021875,
+        "electronics_health_percent": 99.99199333333337,
+        "radiation_fault_state": "nominal",
+        "radiation_fault_active": false
+      }
+    },
+    {
+      "id": "AST-2",
+      "type": "asteroid",
+      "active": true,
+      "selected_for_data": false,
+      "position_m_eci": {
+        "x": 5556214.535423215,
+        "y": -374996.32393710274,
+        "z": 4420225.317707877
+      },
+      "velocity_mps_eci": {
+        "x": -4078.0893220265734,
+        "y": -4077.95203745734,
+        "z": 4778.985953522584
+      },
+      "speed_mps": 7489.940726213779,
+      "distance_from_earth_center_m": 7109889.877200648,
+      "altitude_m": 738881.4772006478,
+      "altitude_km": 738.8814772006479,
+      "specific_orbital_energy_j_per_kg": -28013209.091692816,
+      "central_body": "Earth",
+      "measurement_timestamp": {
+        "unix_time_s": 1777860878.888942,
+        "utc_iso": "2026-05-04T02:14:38.888942+00:00",
+        "simulation_visual_time_s": 0.9,
+        "simulation_physical_time_s": 540.0,
+        "frame": 108,
+        "sample_hz": 10.0,
+        "base_sample_hz": 10.0,
+        "speed_multiplier": 1.0
+      },
+      "mass_kg": 1000.0,
+      "physical_radius_m": 2.0,
+      "collision_threat": true,
+      "orbit_class": "LEO",
+      "orbit_description": "LEO circular asteroid orbit, altitude 750 km",
+      "radiation": {
+        "object_id": "AST-2",
+        "object_type": "asteroid",
+        "central_body": "Earth",
+        "radiation_region": "low_earth_orbit",
+        "position_m_eci": {
+          "x": 5556214.535423215,
+          "y": -374996.32393710274,
+          "z": 4420225.317707877
+        },
+        "speed_mps": 7489.940726213779,
+        "mass_kg": 1000.0,
+        "shielding_mm_aluminum": 0.0,
+        "shielding_factor": 1.0,
+        "baseline_dose_rate_msv_per_day": 0.35,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 0.35,
+        "particle_flux_pfu_gt_10mev": 36.0,
+        "particle_flux_pfu": 36.0,
+        "estimated_single_event_upset_rate_per_day": 0.000545,
+        "single_event_upset_probability_per_day": 0.000545,
+        "solar_panel_degradation_fraction_per_day": 2.8e-05,
+        "communications_blackout_probability": 0.011000000000000001,
+        "radiation_risk_level": "low",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": false,
+          "critical_dose_rate": false,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.0021875,
+        "electronics_health_percent": 99.99199333333337,
+        "radiation_fault_state": "nominal",
+        "radiation_fault_active": false
+      }
+    },
+    {
+      "id": "AST-3",
+      "type": "asteroid",
+      "active": true,
+      "selected_for_data": false,
+      "position_m_eci": {
+        "x": -17904276.600703318,
+        "y": -1509151.6744262066,
+        "z": 19709447.031455796
+      },
+      "velocity_mps_eci": {
+        "x": 1216.836924669475,
+        "y": 3405.677897128495,
+        "z": 1366.1863508216811
+      },
+      "speed_mps": 3865.9797187000468,
+      "distance_from_earth_center_m": 26670263.62180692,
+      "altitude_m": 20299255.22180692,
+      "altitude_km": 20299.25522180692,
+      "specific_orbital_energy_j_per_kg": -7472601.038725459,
+      "central_body": "Earth",
+      "measurement_timestamp": {
+        "unix_time_s": 1777860878.888942,
+        "utc_iso": "2026-05-04T02:14:38.888942+00:00",
+        "simulation_visual_time_s": 0.9,
+        "simulation_physical_time_s": 540.0,
+        "frame": 108,
+        "sample_hz": 10.0,
+        "base_sample_hz": 10.0,
+        "speed_multiplier": 1.0
+      },
+      "mass_kg": 1000.0,
+      "physical_radius_m": 2.0,
+      "collision_threat": true,
+      "orbit_class": "MEO",
+      "orbit_description": "MEO circular asteroid orbit, altitude 20300 km",
+      "radiation": {
+        "object_id": "AST-3",
+        "object_type": "asteroid",
+        "central_body": "Earth",
+        "radiation_region": "outer_van_allen_region",
+        "position_m_eci": {
+          "x": -17904276.600703318,
+          "y": -1509151.6744262066,
+          "z": 19709447.031455796
+        },
+        "speed_mps": 3865.9797187000468,
+        "mass_kg": 1000.0,
+        "shielding_mm_aluminum": 0.0,
+        "shielding_factor": 1.0,
+        "baseline_dose_rate_msv_per_day": 14.4,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 14.4,
+        "particle_flux_pfu_gt_10mev": 951.0,
+        "particle_flux_pfu": 951.0,
+        "estimated_single_event_upset_rate_per_day": 0.02162,
+        "single_event_upset_probability_per_day": 0.02162,
+        "solar_panel_degradation_fraction_per_day": 0.001152,
+        "communications_blackout_probability": 0.02,
+        "radiation_risk_level": "high",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": true,
+          "critical_dose_rate": false,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.09,
+        "electronics_health_percent": 99.67961499999994,
+        "radiation_fault_state": "degraded",
+        "radiation_fault_active": true
+      }
+    },
+    {
+      "id": "AST-4",
+      "type": "asteroid",
+      "active": true,
+      "selected_for_data": false,
+      "position_m_eci": {
+        "x": -2601814.457915862,
+        "y": 16326310.6895024,
+        "z": -22561510.017224833
+      },
+      "velocity_mps_eci": {
+        "x": 2556.5772384851734,
+        "y": 2381.953175850861,
+        "z": 1428.8048301546885
+      },
+      "speed_mps": 3775.0856084279526,
+      "distance_from_earth_center_m": 27970334.16784499,
+      "altitude_m": 21599325.76784499,
+      "altitude_km": 21599.325767844988,
+      "specific_orbital_energy_j_per_kg": -7125193.056421163,
+      "central_body": "Earth",
+      "measurement_timestamp": {
+        "unix_time_s": 1777860878.888942,
+        "utc_iso": "2026-05-04T02:14:38.888942+00:00",
+        "simulation_visual_time_s": 0.9,
+        "simulation_physical_time_s": 540.0,
+        "frame": 108,
+        "sample_hz": 10.0,
+        "base_sample_hz": 10.0,
+        "speed_multiplier": 1.0
+      },
+      "mass_kg": 1000.0,
+      "physical_radius_m": 2.0,
+      "collision_threat": true,
+      "orbit_class": "MEO",
+      "orbit_description": "MEO circular asteroid orbit, altitude 21600 km",
+      "radiation": {
+        "object_id": "AST-4",
+        "object_type": "asteroid",
+        "central_body": "Earth",
+        "radiation_region": "outer_van_allen_region",
+        "position_m_eci": {
+          "x": -2601814.457915862,
+          "y": 16326310.6895024,
+          "z": -22561510.017224833
+        },
+        "speed_mps": 3775.0856084279526,
+        "mass_kg": 1000.0,
+        "shielding_mm_aluminum": 0.0,
+        "shielding_factor": 1.0,
+        "baseline_dose_rate_msv_per_day": 14.4,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 14.4,
+        "particle_flux_pfu_gt_10mev": 951.0,
+        "particle_flux_pfu": 951.0,
+        "estimated_single_event_upset_rate_per_day": 0.02162,
+        "single_event_upset_probability_per_day": 0.02162,
+        "solar_panel_degradation_fraction_per_day": 0.001152,
+        "communications_blackout_probability": 0.02,
+        "radiation_risk_level": "high",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": true,
+          "critical_dose_rate": false,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.09,
+        "electronics_health_percent": 99.67961499999994,
+        "radiation_fault_state": "degraded",
+        "radiation_fault_active": true
+      }
+    },
+    {
+      "id": "AST-5",
+      "type": "asteroid",
+      "active": true,
+      "selected_for_data": false,
+      "position_m_eci": {
+        "x": 2690177.025600126,
+        "y": 4086922.2493979363,
+        "z": -6062281.677379937
+      },
+      "velocity_mps_eci": {
+        "x": 2013.2943002544127,
+        "y": -8787.715724596574,
+        "z": -2472.2580641115974
+      },
+      "speed_mps": 9348.227721409208,
+      "distance_from_earth_center_m": 7790458.589684379,
+      "altitude_m": 1419450.189684379,
+      "altitude_km": 1419.450189684379,
+      "specific_orbital_energy_j_per_kg": -7470528.215462998,
+      "central_body": "Earth",
+      "measurement_timestamp": {
+        "unix_time_s": 1777860878.888942,
+        "utc_iso": "2026-05-04T02:14:38.888942+00:00",
+        "simulation_visual_time_s": 0.9,
+        "simulation_physical_time_s": 540.0,
+        "frame": 108,
+        "sample_hz": 10.0,
+        "base_sample_hz": 10.0,
+        "speed_multiplier": 1.0
+      },
+      "mass_kg": 1000.0,
+      "physical_radius_m": 2.0,
+      "collision_threat": true,
+      "orbit_class": "HEO",
+      "orbit_description": "HEO elliptical asteroid orbit, perigee 1000 km, apogee 39700 km",
+      "radiation": {
+        "object_id": "AST-5",
+        "object_type": "asteroid",
+        "central_body": "Earth",
+        "radiation_region": "inner_van_allen_region",
+        "position_m_eci": {
+          "x": 2690177.025600126,
+          "y": 4086922.2493979363,
+          "z": -6062281.677379937
+        },
+        "speed_mps": 9348.227721409208,
+        "mass_kg": 1000.0,
+        "shielding_mm_aluminum": 0.0,
+        "shielding_factor": 1.0,
+        "baseline_dose_rate_msv_per_day": 32.4,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 32.4,
+        "particle_flux_pfu_gt_10mev": 2501.0,
+        "particle_flux_pfu": 2501.0,
+        "estimated_single_event_upset_rate_per_day": 0.04862,
+        "single_event_upset_probability_per_day": 0.04862,
+        "solar_panel_degradation_fraction_per_day": 0.002592,
+        "communications_blackout_probability": 0.02,
+        "radiation_risk_level": "critical",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": true,
+          "critical_dose_rate": true,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.20249999999999996,
+        "electronics_health_percent": 99.27941499999996,
+        "radiation_fault_state": "critical_fault_risk",
+        "radiation_fault_active": true
+      }
+    },
+    {
+      "id": "AST-6",
+      "type": "asteroid",
+      "active": true,
+      "selected_for_data": false,
+      "position_m_eci": {
+        "x": 12013165.377282392,
+        "y": 17948888.365843177,
+        "z": 27022376.438536674
+      },
+      "velocity_mps_eci": {
+        "x": 1288.5574601149222,
+        "y": -727.5779481120045,
+        "z": 2436.749808111447
+      },
+      "speed_mps": 2850.8769924231856,
+      "distance_from_earth_center_m": 34593172.22137078,
+      "altitude_m": 28222163.82137078,
+      "altitude_km": 28222.16382137078,
+      "specific_orbital_energy_j_per_kg": -7458767.961620346,
+      "central_body": "Earth",
+      "measurement_timestamp": {
+        "unix_time_s": 1777860878.888942,
+        "utc_iso": "2026-05-04T02:14:38.888942+00:00",
+        "simulation_visual_time_s": 0.9,
+        "simulation_physical_time_s": 540.0,
+        "frame": 108,
+        "sample_hz": 10.0,
+        "base_sample_hz": 10.0,
+        "speed_multiplier": 1.0
+      },
+      "mass_kg": 1000.0,
+      "physical_radius_m": 2.0,
+      "collision_threat": true,
+      "orbit_class": "HEO",
+      "orbit_description": "HEO elliptical asteroid orbit, perigee 1000 km, apogee 39700 km",
+      "radiation": {
+        "object_id": "AST-6",
+        "object_type": "asteroid",
+        "central_body": "Earth",
+        "radiation_region": "outer_van_allen_region",
+        "position_m_eci": {
+          "x": 12013165.377282392,
+          "y": 17948888.365843177,
+          "z": 27022376.438536674
+        },
+        "speed_mps": 2850.8769924231856,
+        "mass_kg": 1000.0,
+        "shielding_mm_aluminum": 0.0,
+        "shielding_factor": 1.0,
+        "baseline_dose_rate_msv_per_day": 14.4,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 14.4,
+        "particle_flux_pfu_gt_10mev": 951.0,
+        "particle_flux_pfu": 951.0,
+        "estimated_single_event_upset_rate_per_day": 0.02162,
+        "single_event_upset_probability_per_day": 0.02162,
+        "solar_panel_degradation_fraction_per_day": 0.001152,
+        "communications_blackout_probability": 0.02,
+        "radiation_risk_level": "high",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": true,
+          "critical_dose_rate": false,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.09,
+        "electronics_health_percent": 99.67961499999994,
+        "radiation_fault_state": "degraded",
+        "radiation_fault_active": true
+      }
+    }
+  ],
+  "solar_environment": {
+    "schema": "satellite_simulation.solar_environment.v2",
+    "sun_position_m_eci": {
+      "x": -149597869835.39383,
+      "y": -16083733.55813077,
+      "z": -0.0
+    },
+    "sun_scene_position": {
+      "x": -23481.03478177706,
+      "y": -2.5245192830275927,
+      "z": -0.0
+    },
+    "sun_visual_radius_scene_units": 109.19778413728037,
+    "sun_direction_from_earth_unit": {
+      "x": -0.9999999942204647,
+      "y": -0.0001075131182206778,
+      "z": -0.0
+    },
+    "earth_sun_distance_m": 149597870700.0,
+    "solar_constant_w_m2_at_1au": 1361.0,
+    "earth_heliocentric_position_m": {
+      "x": 149597869835.39383,
+      "y": 16083733.55813077,
+      "z": 0.0
+    },
+    "earth_heliocentric_velocity_mps": {
+      "x": -3.2022450940676745,
+      "y": 29784.691659555127,
+      "z": 0.0
+    },
+    "earth_orbital_speed_mps": 29784.691831696804,
+    "earth_orbital_angular_rate_rad_s": 1.990983674588946e-07,
+    "earth_orbital_true_anomaly_rad": 0.00010751311842780309,
+    "earth_rotation_rate_rad_s": 7.2921159e-05,
+    "model_note": "True-distance Sun/Earth geometry is used for vector, eclipse, solar power, thermal, and radiation telemetry. Control decisions are external."
+  },
+  "environment_model": {
+    "enabled": true,
+    "description": "Earth/Sun-only environment vectors for external attitude, roll, antenna, and solar panel optimization.",
+    "simulation_controls_attitude_internally": false,
+    "external_controller_expected": true,
+    "mars_removed": true
+  },
+  "radiation_environment": {
+    "enabled": true,
+    "model_type": "earth_orbit_space_weather_and_radiation_belt_model",
+    "description": "Earth-only radiation belts and solar-storm telemetry layer. Exports space-weather risk fields for external decision systems; no routing inside the sim.",
+    "router_layer_included": false,
+    "frame": 108,
+    "visual_time_s": 0.9,
+    "physical_time_s": 540.0,
+    "solar_weather": {
+      "solar_storm_active": false,
+      "active_event_name": null,
+      "severity": "quiet",
+      "storm_phase": 0.0,
+      "solar_proton_flux_pfu_gt_10mev": 1.0,
+      "solar_wind_speed_km_s": 420.0,
+      "kp_index": 2.0,
+      "dst_index_nt": -8.0,
+      "dose_rate_multiplier": 1.0,
+      "rf_blackout_probability": 0.02
+    },
+    "radiation_model_parameters": {
+      "base_gcr_dose_rate_msv_per_day": 1.8,
+      "earth_leo_base_dose_rate_msv_per_day": 0.35,
+      "van_allen_inner_belt_factor": 18.0,
+      "van_allen_outer_belt_factor": 8.0,
+      "shielding_halving_thickness_mm_aluminum": 7.0,
+      "sun_vector_controls_solar_storm_exposure": true,
+      "earth_eclipse_reduces_direct_solar_storm_exposure": true
+    },
+    "counts": {
+      "monitored_objects": 12,
+      "high_radiation_risk_objects": 6,
+      "critical_radiation_risk_objects": 2,
+      "objects_with_high_or_critical_seu_risk": 0
+    },
+    "radiation_events": [
+      {
+        "name": "SOLAR-STORM-WINDOW-25S",
+        "status": "scheduled",
+        "start_visual_time_s": 25.0,
+        "duration_visual_time_s": 24.0,
+        "end_visual_time_s": 49.0,
+        "severity": "moderate",
+        "current_phase": 0.0,
+        "peak_solar_proton_flux_pfu": 120.0,
+        "peak_kp_index": 6.0,
+        "peak_solar_wind_speed_km_s": 650.0,
+        "peak_dose_multiplier": 6.0,
+        "rf_blackout_probability_peak": 0.18
+      },
+      {
+        "name": "SPE-DEMO-2",
+        "status": "scheduled",
+        "start_visual_time_s": 62.0,
+        "duration_visual_time_s": 24.0,
+        "end_visual_time_s": 86.0,
+        "severity": "strong",
+        "current_phase": 0.0,
+        "peak_solar_proton_flux_pfu": 850.0,
+        "peak_kp_index": 8.0,
+        "peak_solar_wind_speed_km_s": 880.0,
+        "peak_dose_multiplier": 18.0,
+        "rf_blackout_probability_peak": 0.42
+      }
+    ],
+    "alerts": [
+      {
+        "object_id": "SAT-3",
+        "object_type": "satellite",
+        "risk_level": "high",
+        "dose_rate_msv_per_day": 11.242212223042225,
+        "estimated_single_event_upset_rate_per_day": 0.013180961649051448,
+        "communications_blackout_probability": 0.02,
+        "particle_flux_pfu": 951.0,
+        "single_event_upset_probability_per_day": 0.013180961649051448,
+        "electronics_health_percent": 99.79147466095303,
+        "radiation_fault_state": "degraded"
+      },
+      {
+        "object_id": "SAT-4",
+        "object_type": "satellite",
+        "risk_level": "high",
+        "dose_rate_msv_per_day": 11.242212223042225,
+        "estimated_single_event_upset_rate_per_day": 0.013180961649051448,
+        "communications_blackout_probability": 0.02,
+        "particle_flux_pfu": 951.0,
+        "single_event_upset_probability_per_day": 0.013180961649051448,
+        "electronics_health_percent": 99.79147466095303,
+        "radiation_fault_state": "degraded"
+      },
+      {
+        "object_id": "SAT-5",
+        "object_type": "satellite",
+        "risk_level": "critical",
+        "dose_rate_msv_per_day": 25.294977501845004,
+        "estimated_single_event_upset_rate_per_day": 0.029637645980811866,
+        "communications_blackout_probability": 0.02,
+        "particle_flux_pfu": 2501.0,
+        "single_event_upset_probability_per_day": 0.029637645980811866,
+        "electronics_health_percent": 99.53103756160178,
+        "radiation_fault_state": "critical_fault_risk"
+      },
+      {
+        "object_id": "SAT-6",
+        "object_type": "satellite",
+        "risk_level": "high",
+        "dose_rate_msv_per_day": 11.242212223042225,
+        "estimated_single_event_upset_rate_per_day": 0.013180961649051448,
+        "communications_blackout_probability": 0.02,
+        "particle_flux_pfu": 951.0,
+        "single_event_upset_probability_per_day": 0.013180961649051448,
+        "electronics_health_percent": 99.79147466095303,
+        "radiation_fault_state": "degraded"
+      },
+      {
+        "object_id": "AST-3",
+        "object_type": "asteroid",
+        "risk_level": "high",
+        "dose_rate_msv_per_day": 14.4,
+        "estimated_single_event_upset_rate_per_day": 0.02162,
+        "communications_blackout_probability": 0.02,
+        "particle_flux_pfu": 951.0,
+        "single_event_upset_probability_per_day": 0.02162,
+        "electronics_health_percent": 99.67961499999994,
+        "radiation_fault_state": "degraded"
+      },
+      {
+        "object_id": "AST-4",
+        "object_type": "asteroid",
+        "risk_level": "high",
+        "dose_rate_msv_per_day": 14.4,
+        "estimated_single_event_upset_rate_per_day": 0.02162,
+        "communications_blackout_probability": 0.02,
+        "particle_flux_pfu": 951.0,
+        "single_event_upset_probability_per_day": 0.02162,
+        "electronics_health_percent": 99.67961499999994,
+        "radiation_fault_state": "degraded"
+      },
+      {
+        "object_id": "AST-5",
+        "object_type": "asteroid",
+        "risk_level": "critical",
+        "dose_rate_msv_per_day": 32.4,
+        "estimated_single_event_upset_rate_per_day": 0.04862,
+        "communications_blackout_probability": 0.02,
+        "particle_flux_pfu": 2501.0,
+        "single_event_upset_probability_per_day": 0.04862,
+        "electronics_health_percent": 99.27941499999996,
+        "radiation_fault_state": "critical_fault_risk"
+      },
+      {
+        "object_id": "AST-6",
+        "object_type": "asteroid",
+        "risk_level": "high",
+        "dose_rate_msv_per_day": 14.4,
+        "estimated_single_event_upset_rate_per_day": 0.02162,
+        "communications_blackout_probability": 0.02,
+        "particle_flux_pfu": 951.0,
+        "single_event_upset_probability_per_day": 0.02162,
+        "electronics_health_percent": 99.67961499999994,
+        "radiation_fault_state": "degraded"
+      }
+    ],
+    "object_exposures": [
+      {
+        "object_id": "SAT-1",
+        "object_type": "satellite",
+        "central_body": "Earth",
+        "radiation_region": "low_earth_orbit",
+        "position_m_eci": {
+          "x": 5750179.090102947,
+          "y": 2305214.5710232467,
+          "z": 3058626.600991214
+        },
+        "speed_mps": 7600.189103298477,
+        "mass_kg": 500.0,
+        "shielding_mm_aluminum": 2.5,
+        "shielding_factor": 0.7807091821557101,
+        "baseline_dose_rate_msv_per_day": 0.35,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 0.2732482137544985,
+        "particle_flux_pfu_gt_10mev": 36.0,
+        "particle_flux_pfu": 36.0,
+        "estimated_single_event_upset_rate_per_day": 0.000335605267871789,
+        "single_event_upset_probability_per_day": 0.000335605267871789,
+        "solar_panel_degradation_fraction_per_day": 2.1859857100359882e-05,
+        "communications_blackout_probability": 0.011000000000000001,
+        "radiation_risk_level": "low",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": false,
+          "critical_dose_rate": false,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.0017078013359656155,
+        "electronics_health_percent": 99.99476028572448,
+        "radiation_fault_state": "nominal",
+        "radiation_fault_active": false
+      },
+      {
+        "object_id": "SAT-2",
+        "object_type": "satellite",
+        "central_body": "Earth",
+        "radiation_region": "low_earth_orbit",
+        "position_m_eci": {
+          "x": 6955969.129123222,
+          "y": -415473.0421807831,
+          "z": 1140057.421776738
+        },
+        "speed_mps": 7522.453950924907,
+        "mass_kg": 500.0,
+        "shielding_mm_aluminum": 2.5,
+        "shielding_factor": 0.7807091821557101,
+        "baseline_dose_rate_msv_per_day": 0.35,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 0.2732482137544985,
+        "particle_flux_pfu_gt_10mev": 36.0,
+        "particle_flux_pfu": 36.0,
+        "estimated_single_event_upset_rate_per_day": 0.000335605267871789,
+        "single_event_upset_probability_per_day": 0.000335605267871789,
+        "solar_panel_degradation_fraction_per_day": 2.1859857100359882e-05,
+        "communications_blackout_probability": 0.011000000000000001,
+        "radiation_risk_level": "low",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": false,
+          "critical_dose_rate": false,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.0017078013359656155,
+        "electronics_health_percent": 99.99476028572448,
+        "radiation_fault_state": "nominal",
+        "radiation_fault_active": false
+      },
+      {
+        "object_id": "SAT-3",
+        "object_type": "satellite",
+        "central_body": "Earth",
+        "radiation_region": "outer_van_allen_region",
+        "position_m_eci": {
+          "x": -10410459.400721658,
+          "y": 11258674.425042799,
+          "z": 21698926.132840306
+        },
+        "speed_mps": 3873.265226867594,
+        "mass_kg": 500.0,
+        "shielding_mm_aluminum": 2.5,
+        "shielding_factor": 0.7807091821557101,
+        "baseline_dose_rate_msv_per_day": 14.4,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 11.242212223042225,
+        "particle_flux_pfu_gt_10mev": 951.0,
+        "particle_flux_pfu": 951.0,
+        "estimated_single_event_upset_rate_per_day": 0.013180961649051448,
+        "single_event_upset_probability_per_day": 0.013180961649051448,
+        "solar_panel_degradation_fraction_per_day": 0.0008993769778433781,
+        "communications_blackout_probability": 0.02,
+        "radiation_risk_level": "high",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": true,
+          "critical_dose_rate": false,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.0702638263940139,
+        "electronics_health_percent": 99.79147466095303,
+        "radiation_fault_state": "degraded",
+        "radiation_fault_active": true
+      },
+      {
+        "object_id": "SAT-4",
+        "object_type": "satellite",
+        "central_body": "Earth",
+        "radiation_region": "outer_van_allen_region",
+        "position_m_eci": {
+          "x": 9759835.976727402,
+          "y": 20324433.92932621,
+          "z": -16383462.40136431
+        },
+        "speed_mps": 3781.8248249263047,
+        "mass_kg": 500.0,
+        "shielding_mm_aluminum": 2.5,
+        "shielding_factor": 0.7807091821557101,
+        "baseline_dose_rate_msv_per_day": 14.4,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 11.242212223042225,
+        "particle_flux_pfu_gt_10mev": 951.0,
+        "particle_flux_pfu": 951.0,
+        "estimated_single_event_upset_rate_per_day": 0.013180961649051448,
+        "single_event_upset_probability_per_day": 0.013180961649051448,
+        "solar_panel_degradation_fraction_per_day": 0.0008993769778433781,
+        "communications_blackout_probability": 0.02,
+        "radiation_risk_level": "high",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": true,
+          "critical_dose_rate": false,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.0702638263940139,
+        "electronics_health_percent": 99.79147466095303,
+        "radiation_fault_state": "degraded",
+        "radiation_fault_active": true
+      },
+      {
+        "object_id": "SAT-5",
+        "object_type": "satellite",
+        "central_body": "Earth",
+        "radiation_region": "inner_van_allen_region",
+        "position_m_eci": {
+          "x": 4377132.236170495,
+          "y": 3668120.214194362,
+          "z": -5706426.824252175
+        },
+        "speed_mps": 9162.38366530221,
+        "mass_kg": 500.0,
+        "shielding_mm_aluminum": 2.5,
+        "shielding_factor": 0.7807091821557101,
+        "baseline_dose_rate_msv_per_day": 32.4,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 25.294977501845004,
+        "particle_flux_pfu_gt_10mev": 2501.0,
+        "particle_flux_pfu": 2501.0,
+        "estimated_single_event_upset_rate_per_day": 0.029637645980811866,
+        "single_event_upset_probability_per_day": 0.029637645980811866,
+        "solar_panel_degradation_fraction_per_day": 0.0020235982001476005,
+        "communications_blackout_probability": 0.02,
+        "radiation_risk_level": "critical",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": true,
+          "critical_dose_rate": true,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.15809360938653128,
+        "electronics_health_percent": 99.53103756160178,
+        "radiation_fault_state": "critical_fault_risk",
+        "radiation_fault_active": true
+      },
+      {
+        "object_id": "SAT-6",
+        "object_type": "satellite",
+        "central_body": "Earth",
+        "radiation_region": "outer_van_allen_region",
+        "position_m_eci": {
+          "x": 6186528.956892736,
+          "y": -20614109.047916017,
+          "z": 25688562.06880211
+        },
+        "speed_mps": 2978.2948632431776,
+        "mass_kg": 500.0,
+        "shielding_mm_aluminum": 2.5,
+        "shielding_factor": 0.7807091821557101,
+        "baseline_dose_rate_msv_per_day": 14.4,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 11.242212223042225,
+        "particle_flux_pfu_gt_10mev": 951.0,
+        "particle_flux_pfu": 951.0,
+        "estimated_single_event_upset_rate_per_day": 0.013180961649051448,
+        "single_event_upset_probability_per_day": 0.013180961649051448,
+        "solar_panel_degradation_fraction_per_day": 0.0008993769778433781,
+        "communications_blackout_probability": 0.02,
+        "radiation_risk_level": "high",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": true,
+          "critical_dose_rate": false,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.0702638263940139,
+        "electronics_health_percent": 99.79147466095303,
+        "radiation_fault_state": "degraded",
+        "radiation_fault_active": true
+      },
+      {
+        "object_id": "AST-1",
+        "object_type": "asteroid",
+        "central_body": "Earth",
+        "radiation_region": "low_earth_orbit",
+        "position_m_eci": {
+          "x": -6589966.242835155,
+          "y": 865907.0007206282,
+          "z": -2379094.013927391
+        },
+        "speed_mps": 7519.483214180853,
+        "mass_kg": 1000.0,
+        "shielding_mm_aluminum": 0.0,
+        "shielding_factor": 1.0,
+        "baseline_dose_rate_msv_per_day": 0.35,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 0.35,
+        "particle_flux_pfu_gt_10mev": 36.0,
+        "particle_flux_pfu": 36.0,
+        "estimated_single_event_upset_rate_per_day": 0.000545,
+        "single_event_upset_probability_per_day": 0.000545,
+        "solar_panel_degradation_fraction_per_day": 2.8e-05,
+        "communications_blackout_probability": 0.011000000000000001,
+        "radiation_risk_level": "low",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": false,
+          "critical_dose_rate": false,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.0021875,
+        "electronics_health_percent": 99.99199333333337,
+        "radiation_fault_state": "nominal",
+        "radiation_fault_active": false
+      },
+      {
+        "object_id": "AST-2",
+        "object_type": "asteroid",
+        "central_body": "Earth",
+        "radiation_region": "low_earth_orbit",
+        "position_m_eci": {
+          "x": 5556214.535423215,
+          "y": -374996.32393710274,
+          "z": 4420225.317707877
+        },
+        "speed_mps": 7489.940726213779,
+        "mass_kg": 1000.0,
+        "shielding_mm_aluminum": 0.0,
+        "shielding_factor": 1.0,
+        "baseline_dose_rate_msv_per_day": 0.35,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 0.35,
+        "particle_flux_pfu_gt_10mev": 36.0,
+        "particle_flux_pfu": 36.0,
+        "estimated_single_event_upset_rate_per_day": 0.000545,
+        "single_event_upset_probability_per_day": 0.000545,
+        "solar_panel_degradation_fraction_per_day": 2.8e-05,
+        "communications_blackout_probability": 0.011000000000000001,
+        "radiation_risk_level": "low",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": false,
+          "critical_dose_rate": false,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.0021875,
+        "electronics_health_percent": 99.99199333333337,
+        "radiation_fault_state": "nominal",
+        "radiation_fault_active": false
+      },
+      {
+        "object_id": "AST-3",
+        "object_type": "asteroid",
+        "central_body": "Earth",
+        "radiation_region": "outer_van_allen_region",
+        "position_m_eci": {
+          "x": -17904276.600703318,
+          "y": -1509151.6744262066,
+          "z": 19709447.031455796
+        },
+        "speed_mps": 3865.9797187000468,
+        "mass_kg": 1000.0,
+        "shielding_mm_aluminum": 0.0,
+        "shielding_factor": 1.0,
+        "baseline_dose_rate_msv_per_day": 14.4,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 14.4,
+        "particle_flux_pfu_gt_10mev": 951.0,
+        "particle_flux_pfu": 951.0,
+        "estimated_single_event_upset_rate_per_day": 0.02162,
+        "single_event_upset_probability_per_day": 0.02162,
+        "solar_panel_degradation_fraction_per_day": 0.001152,
+        "communications_blackout_probability": 0.02,
+        "radiation_risk_level": "high",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": true,
+          "critical_dose_rate": false,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.09,
+        "electronics_health_percent": 99.67961499999994,
+        "radiation_fault_state": "degraded",
+        "radiation_fault_active": true
+      },
+      {
+        "object_id": "AST-4",
+        "object_type": "asteroid",
+        "central_body": "Earth",
+        "radiation_region": "outer_van_allen_region",
+        "position_m_eci": {
+          "x": -2601814.457915862,
+          "y": 16326310.6895024,
+          "z": -22561510.017224833
+        },
+        "speed_mps": 3775.0856084279526,
+        "mass_kg": 1000.0,
+        "shielding_mm_aluminum": 0.0,
+        "shielding_factor": 1.0,
+        "baseline_dose_rate_msv_per_day": 14.4,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 14.4,
+        "particle_flux_pfu_gt_10mev": 951.0,
+        "particle_flux_pfu": 951.0,
+        "estimated_single_event_upset_rate_per_day": 0.02162,
+        "single_event_upset_probability_per_day": 0.02162,
+        "solar_panel_degradation_fraction_per_day": 0.001152,
+        "communications_blackout_probability": 0.02,
+        "radiation_risk_level": "high",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": true,
+          "critical_dose_rate": false,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.09,
+        "electronics_health_percent": 99.67961499999994,
+        "radiation_fault_state": "degraded",
+        "radiation_fault_active": true
+      },
+      {
+        "object_id": "AST-5",
+        "object_type": "asteroid",
+        "central_body": "Earth",
+        "radiation_region": "inner_van_allen_region",
+        "position_m_eci": {
+          "x": 2690177.025600126,
+          "y": 4086922.2493979363,
+          "z": -6062281.677379937
+        },
+        "speed_mps": 9348.227721409208,
+        "mass_kg": 1000.0,
+        "shielding_mm_aluminum": 0.0,
+        "shielding_factor": 1.0,
+        "baseline_dose_rate_msv_per_day": 32.4,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 32.4,
+        "particle_flux_pfu_gt_10mev": 2501.0,
+        "particle_flux_pfu": 2501.0,
+        "estimated_single_event_upset_rate_per_day": 0.04862,
+        "single_event_upset_probability_per_day": 0.04862,
+        "solar_panel_degradation_fraction_per_day": 0.002592,
+        "communications_blackout_probability": 0.02,
+        "radiation_risk_level": "critical",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": true,
+          "critical_dose_rate": true,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.20249999999999996,
+        "electronics_health_percent": 99.27941499999996,
+        "radiation_fault_state": "critical_fault_risk",
+        "radiation_fault_active": true
+      },
+      {
+        "object_id": "AST-6",
+        "object_type": "asteroid",
+        "central_body": "Earth",
+        "radiation_region": "outer_van_allen_region",
+        "position_m_eci": {
+          "x": 12013165.377282392,
+          "y": 17948888.365843177,
+          "z": 27022376.438536674
+        },
+        "speed_mps": 2850.8769924231856,
+        "mass_kg": 1000.0,
+        "shielding_mm_aluminum": 0.0,
+        "shielding_factor": 1.0,
+        "baseline_dose_rate_msv_per_day": 14.4,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 14.4,
+        "particle_flux_pfu_gt_10mev": 951.0,
+        "particle_flux_pfu": 951.0,
+        "estimated_single_event_upset_rate_per_day": 0.02162,
+        "single_event_upset_probability_per_day": 0.02162,
+        "solar_panel_degradation_fraction_per_day": 0.001152,
+        "communications_blackout_probability": 0.02,
+        "radiation_risk_level": "high",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": true,
+          "critical_dose_rate": false,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.09,
+        "electronics_health_percent": 99.67961499999994,
+        "radiation_fault_state": "degraded",
+        "radiation_fault_active": true
+      }
+    ],
+    "decision_request": {
+      "enabled": true,
+      "request_type": "radiation_aware_asset_selection_and_maneuver_planning",
+      "router_layer_included_in_simulation": false,
+      "note": "Simulation only exports radiation/RF/collision/solar/thermal/power telemetry. External system should decide routing, satellite selection, roll optimization, or avoidance actions.",
+      "solar_storm_active": false,
+      "active_solar_event": null,
+      "recommended_external_considerations": [
+        "avoid selecting satellites with high or critical radiation risk",
+        "down-rank assets with degraded electronics health or radiation fault state",
+        "use sunlight, solar panel, voltage, thermal, RF, and radiation fields together for sensor fusion",
+        "use passive_rf_detections plus radiation alerts before issuing thruster commands"
+      ],
+      "priority_objects": [
+        {
+          "object_id": "SAT-3",
+          "object_type": "satellite",
+          "risk_level": "high",
+          "dose_rate_msv_per_day": 11.242212223042225,
+          "estimated_single_event_upset_rate_per_day": 0.013180961649051448,
+          "communications_blackout_probability": 0.02,
+          "particle_flux_pfu": 951.0,
+          "single_event_upset_probability_per_day": 0.013180961649051448,
+          "electronics_health_percent": 99.79147466095303,
+          "radiation_fault_state": "degraded"
+        },
+        {
+          "object_id": "SAT-4",
+          "object_type": "satellite",
+          "risk_level": "high",
+          "dose_rate_msv_per_day": 11.242212223042225,
+          "estimated_single_event_upset_rate_per_day": 0.013180961649051448,
+          "communications_blackout_probability": 0.02,
+          "particle_flux_pfu": 951.0,
+          "single_event_upset_probability_per_day": 0.013180961649051448,
+          "electronics_health_percent": 99.79147466095303,
+          "radiation_fault_state": "degraded"
+        },
+        {
+          "object_id": "SAT-5",
+          "object_type": "satellite",
+          "risk_level": "critical",
+          "dose_rate_msv_per_day": 25.294977501845004,
+          "estimated_single_event_upset_rate_per_day": 0.029637645980811866,
+          "communications_blackout_probability": 0.02,
+          "particle_flux_pfu": 2501.0,
+          "single_event_upset_probability_per_day": 0.029637645980811866,
+          "electronics_health_percent": 99.53103756160178,
+          "radiation_fault_state": "critical_fault_risk"
+        },
+        {
+          "object_id": "SAT-6",
+          "object_type": "satellite",
+          "risk_level": "high",
+          "dose_rate_msv_per_day": 11.242212223042225,
+          "estimated_single_event_upset_rate_per_day": 0.013180961649051448,
+          "communications_blackout_probability": 0.02,
+          "particle_flux_pfu": 951.0,
+          "single_event_upset_probability_per_day": 0.013180961649051448,
+          "electronics_health_percent": 99.79147466095303,
+          "radiation_fault_state": "degraded"
+        },
+        {
+          "object_id": "AST-3",
+          "object_type": "asteroid",
+          "risk_level": "high",
+          "dose_rate_msv_per_day": 14.4,
+          "estimated_single_event_upset_rate_per_day": 0.02162,
+          "communications_blackout_probability": 0.02,
+          "particle_flux_pfu": 951.0,
+          "single_event_upset_probability_per_day": 0.02162,
+          "electronics_health_percent": 99.67961499999994,
+          "radiation_fault_state": "degraded"
+        },
+        {
+          "object_id": "AST-4",
+          "object_type": "asteroid",
+          "risk_level": "high",
+          "dose_rate_msv_per_day": 14.4,
+          "estimated_single_event_upset_rate_per_day": 0.02162,
+          "communications_blackout_probability": 0.02,
+          "particle_flux_pfu": 951.0,
+          "single_event_upset_probability_per_day": 0.02162,
+          "electronics_health_percent": 99.67961499999994,
+          "radiation_fault_state": "degraded"
+        },
+        {
+          "object_id": "AST-5",
+          "object_type": "asteroid",
+          "risk_level": "critical",
+          "dose_rate_msv_per_day": 32.4,
+          "estimated_single_event_upset_rate_per_day": 0.04862,
+          "communications_blackout_probability": 0.02,
+          "particle_flux_pfu": 2501.0,
+          "single_event_upset_probability_per_day": 0.04862,
+          "electronics_health_percent": 99.27941499999996,
+          "radiation_fault_state": "critical_fault_risk"
+        },
+        {
+          "object_id": "AST-6",
+          "object_type": "asteroid",
+          "risk_level": "high",
+          "dose_rate_msv_per_day": 14.4,
+          "estimated_single_event_upset_rate_per_day": 0.02162,
+          "communications_blackout_probability": 0.02,
+          "particle_flux_pfu": 951.0,
+          "single_event_upset_probability_per_day": 0.02162,
+          "electronics_health_percent": 99.67961499999994,
+          "radiation_fault_state": "degraded"
+        }
+      ],
+      "requires_external_decision": true
+    }
+  },
+  "radiation_effects": {
+    "enabled": true,
+    "model_type": "earth_orbit_space_weather_and_radiation_belt_model",
+    "description": "Earth-only radiation belts and solar-storm telemetry layer. Exports space-weather risk fields for external decision systems; no routing inside the sim.",
+    "router_layer_included": false,
+    "frame": 108,
+    "visual_time_s": 0.9,
+    "physical_time_s": 540.0,
+    "solar_weather": {
+      "solar_storm_active": false,
+      "active_event_name": null,
+      "severity": "quiet",
+      "storm_phase": 0.0,
+      "solar_proton_flux_pfu_gt_10mev": 1.0,
+      "solar_wind_speed_km_s": 420.0,
+      "kp_index": 2.0,
+      "dst_index_nt": -8.0,
+      "dose_rate_multiplier": 1.0,
+      "rf_blackout_probability": 0.02
+    },
+    "radiation_model_parameters": {
+      "base_gcr_dose_rate_msv_per_day": 1.8,
+      "earth_leo_base_dose_rate_msv_per_day": 0.35,
+      "van_allen_inner_belt_factor": 18.0,
+      "van_allen_outer_belt_factor": 8.0,
+      "shielding_halving_thickness_mm_aluminum": 7.0,
+      "sun_vector_controls_solar_storm_exposure": true,
+      "earth_eclipse_reduces_direct_solar_storm_exposure": true
+    },
+    "counts": {
+      "monitored_objects": 12,
+      "high_radiation_risk_objects": 6,
+      "critical_radiation_risk_objects": 2,
+      "objects_with_high_or_critical_seu_risk": 0
+    },
+    "radiation_events": [
+      {
+        "name": "SOLAR-STORM-WINDOW-25S",
+        "status": "scheduled",
+        "start_visual_time_s": 25.0,
+        "duration_visual_time_s": 24.0,
+        "end_visual_time_s": 49.0,
+        "severity": "moderate",
+        "current_phase": 0.0,
+        "peak_solar_proton_flux_pfu": 120.0,
+        "peak_kp_index": 6.0,
+        "peak_solar_wind_speed_km_s": 650.0,
+        "peak_dose_multiplier": 6.0,
+        "rf_blackout_probability_peak": 0.18
+      },
+      {
+        "name": "SPE-DEMO-2",
+        "status": "scheduled",
+        "start_visual_time_s": 62.0,
+        "duration_visual_time_s": 24.0,
+        "end_visual_time_s": 86.0,
+        "severity": "strong",
+        "current_phase": 0.0,
+        "peak_solar_proton_flux_pfu": 850.0,
+        "peak_kp_index": 8.0,
+        "peak_solar_wind_speed_km_s": 880.0,
+        "peak_dose_multiplier": 18.0,
+        "rf_blackout_probability_peak": 0.42
+      }
+    ],
+    "alerts": [
+      {
+        "object_id": "SAT-3",
+        "object_type": "satellite",
+        "risk_level": "high",
+        "dose_rate_msv_per_day": 11.242212223042225,
+        "estimated_single_event_upset_rate_per_day": 0.013180961649051448,
+        "communications_blackout_probability": 0.02,
+        "particle_flux_pfu": 951.0,
+        "single_event_upset_probability_per_day": 0.013180961649051448,
+        "electronics_health_percent": 99.79147466095303,
+        "radiation_fault_state": "degraded"
+      },
+      {
+        "object_id": "SAT-4",
+        "object_type": "satellite",
+        "risk_level": "high",
+        "dose_rate_msv_per_day": 11.242212223042225,
+        "estimated_single_event_upset_rate_per_day": 0.013180961649051448,
+        "communications_blackout_probability": 0.02,
+        "particle_flux_pfu": 951.0,
+        "single_event_upset_probability_per_day": 0.013180961649051448,
+        "electronics_health_percent": 99.79147466095303,
+        "radiation_fault_state": "degraded"
+      },
+      {
+        "object_id": "SAT-5",
+        "object_type": "satellite",
+        "risk_level": "critical",
+        "dose_rate_msv_per_day": 25.294977501845004,
+        "estimated_single_event_upset_rate_per_day": 0.029637645980811866,
+        "communications_blackout_probability": 0.02,
+        "particle_flux_pfu": 2501.0,
+        "single_event_upset_probability_per_day": 0.029637645980811866,
+        "electronics_health_percent": 99.53103756160178,
+        "radiation_fault_state": "critical_fault_risk"
+      },
+      {
+        "object_id": "SAT-6",
+        "object_type": "satellite",
+        "risk_level": "high",
+        "dose_rate_msv_per_day": 11.242212223042225,
+        "estimated_single_event_upset_rate_per_day": 0.013180961649051448,
+        "communications_blackout_probability": 0.02,
+        "particle_flux_pfu": 951.0,
+        "single_event_upset_probability_per_day": 0.013180961649051448,
+        "electronics_health_percent": 99.79147466095303,
+        "radiation_fault_state": "degraded"
+      },
+      {
+        "object_id": "AST-3",
+        "object_type": "asteroid",
+        "risk_level": "high",
+        "dose_rate_msv_per_day": 14.4,
+        "estimated_single_event_upset_rate_per_day": 0.02162,
+        "communications_blackout_probability": 0.02,
+        "particle_flux_pfu": 951.0,
+        "single_event_upset_probability_per_day": 0.02162,
+        "electronics_health_percent": 99.67961499999994,
+        "radiation_fault_state": "degraded"
+      },
+      {
+        "object_id": "AST-4",
+        "object_type": "asteroid",
+        "risk_level": "high",
+        "dose_rate_msv_per_day": 14.4,
+        "estimated_single_event_upset_rate_per_day": 0.02162,
+        "communications_blackout_probability": 0.02,
+        "particle_flux_pfu": 951.0,
+        "single_event_upset_probability_per_day": 0.02162,
+        "electronics_health_percent": 99.67961499999994,
+        "radiation_fault_state": "degraded"
+      },
+      {
+        "object_id": "AST-5",
+        "object_type": "asteroid",
+        "risk_level": "critical",
+        "dose_rate_msv_per_day": 32.4,
+        "estimated_single_event_upset_rate_per_day": 0.04862,
+        "communications_blackout_probability": 0.02,
+        "particle_flux_pfu": 2501.0,
+        "single_event_upset_probability_per_day": 0.04862,
+        "electronics_health_percent": 99.27941499999996,
+        "radiation_fault_state": "critical_fault_risk"
+      },
+      {
+        "object_id": "AST-6",
+        "object_type": "asteroid",
+        "risk_level": "high",
+        "dose_rate_msv_per_day": 14.4,
+        "estimated_single_event_upset_rate_per_day": 0.02162,
+        "communications_blackout_probability": 0.02,
+        "particle_flux_pfu": 951.0,
+        "single_event_upset_probability_per_day": 0.02162,
+        "electronics_health_percent": 99.67961499999994,
+        "radiation_fault_state": "degraded"
+      }
+    ],
+    "object_exposures": [
+      {
+        "object_id": "SAT-1",
+        "object_type": "satellite",
+        "central_body": "Earth",
+        "radiation_region": "low_earth_orbit",
+        "position_m_eci": {
+          "x": 5750179.090102947,
+          "y": 2305214.5710232467,
+          "z": 3058626.600991214
+        },
+        "speed_mps": 7600.189103298477,
+        "mass_kg": 500.0,
+        "shielding_mm_aluminum": 2.5,
+        "shielding_factor": 0.7807091821557101,
+        "baseline_dose_rate_msv_per_day": 0.35,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 0.2732482137544985,
+        "particle_flux_pfu_gt_10mev": 36.0,
+        "particle_flux_pfu": 36.0,
+        "estimated_single_event_upset_rate_per_day": 0.000335605267871789,
+        "single_event_upset_probability_per_day": 0.000335605267871789,
+        "solar_panel_degradation_fraction_per_day": 2.1859857100359882e-05,
+        "communications_blackout_probability": 0.011000000000000001,
+        "radiation_risk_level": "low",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": false,
+          "critical_dose_rate": false,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.0017078013359656155,
+        "electronics_health_percent": 99.99476028572448,
+        "radiation_fault_state": "nominal",
+        "radiation_fault_active": false
+      },
+      {
+        "object_id": "SAT-2",
+        "object_type": "satellite",
+        "central_body": "Earth",
+        "radiation_region": "low_earth_orbit",
+        "position_m_eci": {
+          "x": 6955969.129123222,
+          "y": -415473.0421807831,
+          "z": 1140057.421776738
+        },
+        "speed_mps": 7522.453950924907,
+        "mass_kg": 500.0,
+        "shielding_mm_aluminum": 2.5,
+        "shielding_factor": 0.7807091821557101,
+        "baseline_dose_rate_msv_per_day": 0.35,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 0.2732482137544985,
+        "particle_flux_pfu_gt_10mev": 36.0,
+        "particle_flux_pfu": 36.0,
+        "estimated_single_event_upset_rate_per_day": 0.000335605267871789,
+        "single_event_upset_probability_per_day": 0.000335605267871789,
+        "solar_panel_degradation_fraction_per_day": 2.1859857100359882e-05,
+        "communications_blackout_probability": 0.011000000000000001,
+        "radiation_risk_level": "low",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": false,
+          "critical_dose_rate": false,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.0017078013359656155,
+        "electronics_health_percent": 99.99476028572448,
+        "radiation_fault_state": "nominal",
+        "radiation_fault_active": false
+      },
+      {
+        "object_id": "SAT-3",
+        "object_type": "satellite",
+        "central_body": "Earth",
+        "radiation_region": "outer_van_allen_region",
+        "position_m_eci": {
+          "x": -10410459.400721658,
+          "y": 11258674.425042799,
+          "z": 21698926.132840306
+        },
+        "speed_mps": 3873.265226867594,
+        "mass_kg": 500.0,
+        "shielding_mm_aluminum": 2.5,
+        "shielding_factor": 0.7807091821557101,
+        "baseline_dose_rate_msv_per_day": 14.4,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 11.242212223042225,
+        "particle_flux_pfu_gt_10mev": 951.0,
+        "particle_flux_pfu": 951.0,
+        "estimated_single_event_upset_rate_per_day": 0.013180961649051448,
+        "single_event_upset_probability_per_day": 0.013180961649051448,
+        "solar_panel_degradation_fraction_per_day": 0.0008993769778433781,
+        "communications_blackout_probability": 0.02,
+        "radiation_risk_level": "high",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": true,
+          "critical_dose_rate": false,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.0702638263940139,
+        "electronics_health_percent": 99.79147466095303,
+        "radiation_fault_state": "degraded",
+        "radiation_fault_active": true
+      },
+      {
+        "object_id": "SAT-4",
+        "object_type": "satellite",
+        "central_body": "Earth",
+        "radiation_region": "outer_van_allen_region",
+        "position_m_eci": {
+          "x": 9759835.976727402,
+          "y": 20324433.92932621,
+          "z": -16383462.40136431
+        },
+        "speed_mps": 3781.8248249263047,
+        "mass_kg": 500.0,
+        "shielding_mm_aluminum": 2.5,
+        "shielding_factor": 0.7807091821557101,
+        "baseline_dose_rate_msv_per_day": 14.4,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 11.242212223042225,
+        "particle_flux_pfu_gt_10mev": 951.0,
+        "particle_flux_pfu": 951.0,
+        "estimated_single_event_upset_rate_per_day": 0.013180961649051448,
+        "single_event_upset_probability_per_day": 0.013180961649051448,
+        "solar_panel_degradation_fraction_per_day": 0.0008993769778433781,
+        "communications_blackout_probability": 0.02,
+        "radiation_risk_level": "high",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": true,
+          "critical_dose_rate": false,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.0702638263940139,
+        "electronics_health_percent": 99.79147466095303,
+        "radiation_fault_state": "degraded",
+        "radiation_fault_active": true
+      },
+      {
+        "object_id": "SAT-5",
+        "object_type": "satellite",
+        "central_body": "Earth",
+        "radiation_region": "inner_van_allen_region",
+        "position_m_eci": {
+          "x": 4377132.236170495,
+          "y": 3668120.214194362,
+          "z": -5706426.824252175
+        },
+        "speed_mps": 9162.38366530221,
+        "mass_kg": 500.0,
+        "shielding_mm_aluminum": 2.5,
+        "shielding_factor": 0.7807091821557101,
+        "baseline_dose_rate_msv_per_day": 32.4,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 25.294977501845004,
+        "particle_flux_pfu_gt_10mev": 2501.0,
+        "particle_flux_pfu": 2501.0,
+        "estimated_single_event_upset_rate_per_day": 0.029637645980811866,
+        "single_event_upset_probability_per_day": 0.029637645980811866,
+        "solar_panel_degradation_fraction_per_day": 0.0020235982001476005,
+        "communications_blackout_probability": 0.02,
+        "radiation_risk_level": "critical",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": true,
+          "critical_dose_rate": true,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.15809360938653128,
+        "electronics_health_percent": 99.53103756160178,
+        "radiation_fault_state": "critical_fault_risk",
+        "radiation_fault_active": true
+      },
+      {
+        "object_id": "SAT-6",
+        "object_type": "satellite",
+        "central_body": "Earth",
+        "radiation_region": "outer_van_allen_region",
+        "position_m_eci": {
+          "x": 6186528.956892736,
+          "y": -20614109.047916017,
+          "z": 25688562.06880211
+        },
+        "speed_mps": 2978.2948632431776,
+        "mass_kg": 500.0,
+        "shielding_mm_aluminum": 2.5,
+        "shielding_factor": 0.7807091821557101,
+        "baseline_dose_rate_msv_per_day": 14.4,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 11.242212223042225,
+        "particle_flux_pfu_gt_10mev": 951.0,
+        "particle_flux_pfu": 951.0,
+        "estimated_single_event_upset_rate_per_day": 0.013180961649051448,
+        "single_event_upset_probability_per_day": 0.013180961649051448,
+        "solar_panel_degradation_fraction_per_day": 0.0008993769778433781,
+        "communications_blackout_probability": 0.02,
+        "radiation_risk_level": "high",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": true,
+          "critical_dose_rate": false,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.0702638263940139,
+        "electronics_health_percent": 99.79147466095303,
+        "radiation_fault_state": "degraded",
+        "radiation_fault_active": true
+      },
+      {
+        "object_id": "AST-1",
+        "object_type": "asteroid",
+        "central_body": "Earth",
+        "radiation_region": "low_earth_orbit",
+        "position_m_eci": {
+          "x": -6589966.242835155,
+          "y": 865907.0007206282,
+          "z": -2379094.013927391
+        },
+        "speed_mps": 7519.483214180853,
+        "mass_kg": 1000.0,
+        "shielding_mm_aluminum": 0.0,
+        "shielding_factor": 1.0,
+        "baseline_dose_rate_msv_per_day": 0.35,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 0.35,
+        "particle_flux_pfu_gt_10mev": 36.0,
+        "particle_flux_pfu": 36.0,
+        "estimated_single_event_upset_rate_per_day": 0.000545,
+        "single_event_upset_probability_per_day": 0.000545,
+        "solar_panel_degradation_fraction_per_day": 2.8e-05,
+        "communications_blackout_probability": 0.011000000000000001,
+        "radiation_risk_level": "low",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": false,
+          "critical_dose_rate": false,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.0021875,
+        "electronics_health_percent": 99.99199333333337,
+        "radiation_fault_state": "nominal",
+        "radiation_fault_active": false
+      },
+      {
+        "object_id": "AST-2",
+        "object_type": "asteroid",
+        "central_body": "Earth",
+        "radiation_region": "low_earth_orbit",
+        "position_m_eci": {
+          "x": 5556214.535423215,
+          "y": -374996.32393710274,
+          "z": 4420225.317707877
+        },
+        "speed_mps": 7489.940726213779,
+        "mass_kg": 1000.0,
+        "shielding_mm_aluminum": 0.0,
+        "shielding_factor": 1.0,
+        "baseline_dose_rate_msv_per_day": 0.35,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 0.35,
+        "particle_flux_pfu_gt_10mev": 36.0,
+        "particle_flux_pfu": 36.0,
+        "estimated_single_event_upset_rate_per_day": 0.000545,
+        "single_event_upset_probability_per_day": 0.000545,
+        "solar_panel_degradation_fraction_per_day": 2.8e-05,
+        "communications_blackout_probability": 0.011000000000000001,
+        "radiation_risk_level": "low",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": false,
+          "critical_dose_rate": false,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.0021875,
+        "electronics_health_percent": 99.99199333333337,
+        "radiation_fault_state": "nominal",
+        "radiation_fault_active": false
+      },
+      {
+        "object_id": "AST-3",
+        "object_type": "asteroid",
+        "central_body": "Earth",
+        "radiation_region": "outer_van_allen_region",
+        "position_m_eci": {
+          "x": -17904276.600703318,
+          "y": -1509151.6744262066,
+          "z": 19709447.031455796
+        },
+        "speed_mps": 3865.9797187000468,
+        "mass_kg": 1000.0,
+        "shielding_mm_aluminum": 0.0,
+        "shielding_factor": 1.0,
+        "baseline_dose_rate_msv_per_day": 14.4,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 14.4,
+        "particle_flux_pfu_gt_10mev": 951.0,
+        "particle_flux_pfu": 951.0,
+        "estimated_single_event_upset_rate_per_day": 0.02162,
+        "single_event_upset_probability_per_day": 0.02162,
+        "solar_panel_degradation_fraction_per_day": 0.001152,
+        "communications_blackout_probability": 0.02,
+        "radiation_risk_level": "high",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": true,
+          "critical_dose_rate": false,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.09,
+        "electronics_health_percent": 99.67961499999994,
+        "radiation_fault_state": "degraded",
+        "radiation_fault_active": true
+      },
+      {
+        "object_id": "AST-4",
+        "object_type": "asteroid",
+        "central_body": "Earth",
+        "radiation_region": "outer_van_allen_region",
+        "position_m_eci": {
+          "x": -2601814.457915862,
+          "y": 16326310.6895024,
+          "z": -22561510.017224833
+        },
+        "speed_mps": 3775.0856084279526,
+        "mass_kg": 1000.0,
+        "shielding_mm_aluminum": 0.0,
+        "shielding_factor": 1.0,
+        "baseline_dose_rate_msv_per_day": 14.4,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 14.4,
+        "particle_flux_pfu_gt_10mev": 951.0,
+        "particle_flux_pfu": 951.0,
+        "estimated_single_event_upset_rate_per_day": 0.02162,
+        "single_event_upset_probability_per_day": 0.02162,
+        "solar_panel_degradation_fraction_per_day": 0.001152,
+        "communications_blackout_probability": 0.02,
+        "radiation_risk_level": "high",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": true,
+          "critical_dose_rate": false,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.09,
+        "electronics_health_percent": 99.67961499999994,
+        "radiation_fault_state": "degraded",
+        "radiation_fault_active": true
+      },
+      {
+        "object_id": "AST-5",
+        "object_type": "asteroid",
+        "central_body": "Earth",
+        "radiation_region": "inner_van_allen_region",
+        "position_m_eci": {
+          "x": 2690177.025600126,
+          "y": 4086922.2493979363,
+          "z": -6062281.677379937
+        },
+        "speed_mps": 9348.227721409208,
+        "mass_kg": 1000.0,
+        "shielding_mm_aluminum": 0.0,
+        "shielding_factor": 1.0,
+        "baseline_dose_rate_msv_per_day": 32.4,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 32.4,
+        "particle_flux_pfu_gt_10mev": 2501.0,
+        "particle_flux_pfu": 2501.0,
+        "estimated_single_event_upset_rate_per_day": 0.04862,
+        "single_event_upset_probability_per_day": 0.04862,
+        "solar_panel_degradation_fraction_per_day": 0.002592,
+        "communications_blackout_probability": 0.02,
+        "radiation_risk_level": "critical",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": true,
+          "critical_dose_rate": true,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.20249999999999996,
+        "electronics_health_percent": 99.27941499999996,
+        "radiation_fault_state": "critical_fault_risk",
+        "radiation_fault_active": true
+      },
+      {
+        "object_id": "AST-6",
+        "object_type": "asteroid",
+        "central_body": "Earth",
+        "radiation_region": "outer_van_allen_region",
+        "position_m_eci": {
+          "x": 12013165.377282392,
+          "y": 17948888.365843177,
+          "z": 27022376.438536674
+        },
+        "speed_mps": 2850.8769924231856,
+        "mass_kg": 1000.0,
+        "shielding_mm_aluminum": 0.0,
+        "shielding_factor": 1.0,
+        "baseline_dose_rate_msv_per_day": 14.4,
+        "solar_storm_exposure_factor": 1.0,
+        "sun_exposure_factor": 1.0,
+        "in_eclipse": false,
+        "dose_rate_msv_per_day": 14.4,
+        "particle_flux_pfu_gt_10mev": 951.0,
+        "particle_flux_pfu": 951.0,
+        "estimated_single_event_upset_rate_per_day": 0.02162,
+        "single_event_upset_probability_per_day": 0.02162,
+        "solar_panel_degradation_fraction_per_day": 0.001152,
+        "communications_blackout_probability": 0.02,
+        "radiation_risk_level": "high",
+        "flags": {
+          "solar_storm_active": false,
+          "sunlit_side": true,
+          "earth_shadow_shielded": false,
+          "high_dose_rate": true,
+          "critical_dose_rate": false,
+          "high_single_event_upset_risk": false,
+          "critical_single_event_upset_risk": false
+        },
+        "cumulative_estimated_dose_msv": 0.09,
+        "electronics_health_percent": 99.67961499999994,
+        "radiation_fault_state": "degraded",
+        "radiation_fault_active": true
+      }
+    ],
+    "decision_request": {
+      "enabled": true,
+      "request_type": "radiation_aware_asset_selection_and_maneuver_planning",
+      "router_layer_included_in_simulation": false,
+      "note": "Simulation only exports radiation/RF/collision/solar/thermal/power telemetry. External system should decide routing, satellite selection, roll optimization, or avoidance actions.",
+      "solar_storm_active": false,
+      "active_solar_event": null,
+      "recommended_external_considerations": [
+        "avoid selecting satellites with high or critical radiation risk",
+        "down-rank assets with degraded electronics health or radiation fault state",
+        "use sunlight, solar panel, voltage, thermal, RF, and radiation fields together for sensor fusion",
+        "use passive_rf_detections plus radiation alerts before issuing thruster commands"
+      ],
+      "priority_objects": [
+        {
+          "object_id": "SAT-3",
+          "object_type": "satellite",
+          "risk_level": "high",
+          "dose_rate_msv_per_day": 11.242212223042225,
+          "estimated_single_event_upset_rate_per_day": 0.013180961649051448,
+          "communications_blackout_probability": 0.02,
+          "particle_flux_pfu": 951.0,
+          "single_event_upset_probability_per_day": 0.013180961649051448,
+          "electronics_health_percent": 99.79147466095303,
+          "radiation_fault_state": "degraded"
+        },
+        {
+          "object_id": "SAT-4",
+          "object_type": "satellite",
+          "risk_level": "high",
+          "dose_rate_msv_per_day": 11.242212223042225,
+          "estimated_single_event_upset_rate_per_day": 0.013180961649051448,
+          "communications_blackout_probability": 0.02,
+          "particle_flux_pfu": 951.0,
+          "single_event_upset_probability_per_day": 0.013180961649051448,
+          "electronics_health_percent": 99.79147466095303,
+          "radiation_fault_state": "degraded"
+        },
+        {
+          "object_id": "SAT-5",
+          "object_type": "satellite",
+          "risk_level": "critical",
+          "dose_rate_msv_per_day": 25.294977501845004,
+          "estimated_single_event_upset_rate_per_day": 0.029637645980811866,
+          "communications_blackout_probability": 0.02,
+          "particle_flux_pfu": 2501.0,
+          "single_event_upset_probability_per_day": 0.029637645980811866,
+          "electronics_health_percent": 99.53103756160178,
+          "radiation_fault_state": "critical_fault_risk"
+        },
+        {
+          "object_id": "SAT-6",
+          "object_type": "satellite",
+          "risk_level": "high",
+          "dose_rate_msv_per_day": 11.242212223042225,
+          "estimated_single_event_upset_rate_per_day": 0.013180961649051448,
+          "communications_blackout_probability": 0.02,
+          "particle_flux_pfu": 951.0,
+          "single_event_upset_probability_per_day": 0.013180961649051448,
+          "electronics_health_percent": 99.79147466095303,
+          "radiation_fault_state": "degraded"
+        },
+        {
+          "object_id": "AST-3",
+          "object_type": "asteroid",
+          "risk_level": "high",
+          "dose_rate_msv_per_day": 14.4,
+          "estimated_single_event_upset_rate_per_day": 0.02162,
+          "communications_blackout_probability": 0.02,
+          "particle_flux_pfu": 951.0,
+          "single_event_upset_probability_per_day": 0.02162,
+          "electronics_health_percent": 99.67961499999994,
+          "radiation_fault_state": "degraded"
+        },
+        {
+          "object_id": "AST-4",
+          "object_type": "asteroid",
+          "risk_level": "high",
+          "dose_rate_msv_per_day": 14.4,
+          "estimated_single_event_upset_rate_per_day": 0.02162,
+          "communications_blackout_probability": 0.02,
+          "particle_flux_pfu": 951.0,
+          "single_event_upset_probability_per_day": 0.02162,
+          "electronics_health_percent": 99.67961499999994,
+          "radiation_fault_state": "degraded"
+        },
+        {
+          "object_id": "AST-5",
+          "object_type": "asteroid",
+          "risk_level": "critical",
+          "dose_rate_msv_per_day": 32.4,
+          "estimated_single_event_upset_rate_per_day": 0.04862,
+          "communications_blackout_probability": 0.02,
+          "particle_flux_pfu": 2501.0,
+          "single_event_upset_probability_per_day": 0.04862,
+          "electronics_health_percent": 99.27941499999996,
+          "radiation_fault_state": "critical_fault_risk"
+        },
+        {
+          "object_id": "AST-6",
+          "object_type": "asteroid",
+          "risk_level": "high",
+          "dose_rate_msv_per_day": 14.4,
+          "estimated_single_event_upset_rate_per_day": 0.02162,
+          "communications_blackout_probability": 0.02,
+          "particle_flux_pfu": 951.0,
+          "single_event_upset_probability_per_day": 0.02162,
+          "electronics_health_percent": 99.67961499999994,
+          "radiation_fault_state": "degraded"
+        }
+      ],
+      "requires_external_decision": true
+    }
+  },
+  "radiation_alerts": [
+    {
+      "object_id": "SAT-3",
+      "object_type": "satellite",
+      "risk_level": "high",
+      "dose_rate_msv_per_day": 11.242212223042225,
+      "estimated_single_event_upset_rate_per_day": 0.013180961649051448,
+      "communications_blackout_probability": 0.02,
+      "particle_flux_pfu": 951.0,
+      "single_event_upset_probability_per_day": 0.013180961649051448,
+      "electronics_health_percent": 99.79147466095303,
+      "radiation_fault_state": "degraded"
+    },
+    {
+      "object_id": "SAT-4",
+      "object_type": "satellite",
+      "risk_level": "high",
+      "dose_rate_msv_per_day": 11.242212223042225,
+      "estimated_single_event_upset_rate_per_day": 0.013180961649051448,
+      "communications_blackout_probability": 0.02,
+      "particle_flux_pfu": 951.0,
+      "single_event_upset_probability_per_day": 0.013180961649051448,
+      "electronics_health_percent": 99.79147466095303,
+      "radiation_fault_state": "degraded"
+    },
+    {
+      "object_id": "SAT-5",
+      "object_type": "satellite",
+      "risk_level": "critical",
+      "dose_rate_msv_per_day": 25.294977501845004,
+      "estimated_single_event_upset_rate_per_day": 0.029637645980811866,
+      "communications_blackout_probability": 0.02,
+      "particle_flux_pfu": 2501.0,
+      "single_event_upset_probability_per_day": 0.029637645980811866,
+      "electronics_health_percent": 99.53103756160178,
+      "radiation_fault_state": "critical_fault_risk"
+    },
+    {
+      "object_id": "SAT-6",
+      "object_type": "satellite",
+      "risk_level": "high",
+      "dose_rate_msv_per_day": 11.242212223042225,
+      "estimated_single_event_upset_rate_per_day": 0.013180961649051448,
+      "communications_blackout_probability": 0.02,
+      "particle_flux_pfu": 951.0,
+      "single_event_upset_probability_per_day": 0.013180961649051448,
+      "electronics_health_percent": 99.79147466095303,
+      "radiation_fault_state": "degraded"
+    },
+    {
+      "object_id": "AST-3",
+      "object_type": "asteroid",
+      "risk_level": "high",
+      "dose_rate_msv_per_day": 14.4,
+      "estimated_single_event_upset_rate_per_day": 0.02162,
+      "communications_blackout_probability": 0.02,
+      "particle_flux_pfu": 951.0,
+      "single_event_upset_probability_per_day": 0.02162,
+      "electronics_health_percent": 99.67961499999994,
+      "radiation_fault_state": "degraded"
+    },
+    {
+      "object_id": "AST-4",
+      "object_type": "asteroid",
+      "risk_level": "high",
+      "dose_rate_msv_per_day": 14.4,
+      "estimated_single_event_upset_rate_per_day": 0.02162,
+      "communications_blackout_probability": 0.02,
+      "particle_flux_pfu": 951.0,
+      "single_event_upset_probability_per_day": 0.02162,
+      "electronics_health_percent": 99.67961499999994,
+      "radiation_fault_state": "degraded"
+    },
+    {
+      "object_id": "AST-5",
+      "object_type": "asteroid",
+      "risk_level": "critical",
+      "dose_rate_msv_per_day": 32.4,
+      "estimated_single_event_upset_rate_per_day": 0.04862,
+      "communications_blackout_probability": 0.02,
+      "particle_flux_pfu": 2501.0,
+      "single_event_upset_probability_per_day": 0.04862,
+      "electronics_health_percent": 99.27941499999996,
+      "radiation_fault_state": "critical_fault_risk"
+    },
+    {
+      "object_id": "AST-6",
+      "object_type": "asteroid",
+      "risk_level": "high",
+      "dose_rate_msv_per_day": 14.4,
+      "estimated_single_event_upset_rate_per_day": 0.02162,
+      "communications_blackout_probability": 0.02,
+      "particle_flux_pfu": 951.0,
+      "single_event_upset_probability_per_day": 0.02162,
+      "electronics_health_percent": 99.67961499999994,
+      "radiation_fault_state": "degraded"
+    }
+  ],
+  "radiation_events": [
+    {
+      "name": "SOLAR-STORM-WINDOW-25S",
+      "status": "scheduled",
+      "start_visual_time_s": 25.0,
+      "duration_visual_time_s": 24.0,
+      "end_visual_time_s": 49.0,
+      "severity": "moderate",
+      "current_phase": 0.0,
+      "peak_solar_proton_flux_pfu": 120.0,
+      "peak_kp_index": 6.0,
+      "peak_solar_wind_speed_km_s": 650.0,
+      "peak_dose_multiplier": 6.0,
+      "rf_blackout_probability_peak": 0.18
+    },
+    {
+      "name": "SPE-DEMO-2",
+      "status": "scheduled",
+      "start_visual_time_s": 62.0,
+      "duration_visual_time_s": 24.0,
+      "end_visual_time_s": 86.0,
+      "severity": "strong",
+      "current_phase": 0.0,
+      "peak_solar_proton_flux_pfu": 850.0,
+      "peak_kp_index": 8.0,
+      "peak_solar_wind_speed_km_s": 880.0,
+      "peak_dose_multiplier": 18.0,
+      "rf_blackout_probability_peak": 0.42
+    }
+  ],
+  "passive_rf": {
+    "enabled": true,
+    "maxwell_based": true,
+    "model_type": "maxwell_derived_far_field_link_budget",
+    "description": "Passive RF detections from Earth satellites using a Maxwell-derived far-field electromagnetic wave approximation.",
+    "physics": {
+      "maxwell_equations_used_as_foundation": true,
+      "solves_full_spatial_eb_fields": false,
+      "approximation": "far-field link-budget / ray-style RF propagation",
+      "propagation_speed_mps": 299792458.0,
+      "frequency_hz": 2200000000.0,
+      "wavelength_m": 0.1362692990909091,
+      "includes_free_space_path_loss": true,
+      "includes_line_of_sight_blocking_by_earth": true,
+      "includes_doppler_shift": true,
+      "includes_snr_thresholding": true,
+      "includes_measurement_noise": true
+    },
+    "detections": []
+  },
+  "passive_rf_detections": [],
+  "decision_request": {
+    "schema": "satellite_simulation.decision_request.v2.earth_sun_sensor_fusion",
+    "needs_external_decision": true,
+    "router_layer_included_in_simulation": false,
+    "simulation_does_not_choose_roll_or_route": true,
+    "external_controller_expected": true,
+    "request_count": 4,
+    "requests": [
+      {
+        "target_satellite": "SAT-3",
+        "recommended_external_action": "radiation_safe_mode_or_asset_switch",
+        "candidate_external_actions": [
+          "radiation_safe_mode_or_asset_switch"
+        ],
+        "input_data_available": [
+          "environment_vectors",
+          "sunlight_state",
+          "attitude_state",
+          "solar_panel_system",
+          "voltage_sensors",
+          "power_system",
+          "thermal_profile",
+          "communication_link",
+          "radiation",
+          "passive_rf_detections",
+          "sensor_fusion_state"
+        ],
+        "reason": "sensor fusion indicates power/thermal/radiation/RF/solar condition requiring external evaluation",
+        "router_layer_included_in_simulation": false
+      },
+      {
+        "target_satellite": "SAT-4",
+        "recommended_external_action": "radiation_safe_mode_or_asset_switch",
+        "candidate_external_actions": [
+          "radiation_safe_mode_or_asset_switch"
+        ],
+        "input_data_available": [
+          "environment_vectors",
+          "sunlight_state",
+          "attitude_state",
+          "solar_panel_system",
+          "voltage_sensors",
+          "power_system",
+          "thermal_profile",
+          "communication_link",
+          "radiation",
+          "passive_rf_detections",
+          "sensor_fusion_state"
+        ],
+        "reason": "sensor fusion indicates power/thermal/radiation/RF/solar condition requiring external evaluation",
+        "router_layer_included_in_simulation": false
+      },
+      {
+        "target_satellite": "SAT-5",
+        "recommended_external_action": "radiation_safe_mode_or_asset_switch",
+        "candidate_external_actions": [
+          "radiation_safe_mode_or_asset_switch"
+        ],
+        "input_data_available": [
+          "environment_vectors",
+          "sunlight_state",
+          "attitude_state",
+          "solar_panel_system",
+          "voltage_sensors",
+          "power_system",
+          "thermal_profile",
+          "communication_link",
+          "radiation",
+          "passive_rf_detections",
+          "sensor_fusion_state"
+        ],
+        "reason": "sensor fusion indicates power/thermal/radiation/RF/solar condition requiring external evaluation",
+        "router_layer_included_in_simulation": false
+      },
+      {
+        "target_satellite": "SAT-6",
+        "recommended_external_action": "radiation_safe_mode_or_asset_switch",
+        "candidate_external_actions": [
+          "radiation_safe_mode_or_asset_switch"
+        ],
+        "input_data_available": [
+          "environment_vectors",
+          "sunlight_state",
+          "attitude_state",
+          "solar_panel_system",
+          "voltage_sensors",
+          "power_system",
+          "thermal_profile",
+          "communication_link",
+          "radiation",
+          "passive_rf_detections",
+          "sensor_fusion_state"
+        ],
+        "reason": "sensor fusion indicates power/thermal/radiation/RF/solar condition requiring external evaluation",
+        "router_layer_included_in_simulation": false
+      }
+    ],
+    "global_considerations": [
+      "Use sun vectors, panel normals, voltages, battery, thermal sensors, and radiation fields to optimize roll/panel pointing externally.",
+      "Use RF detections and collision-risk scores before issuing thruster maneuvers.",
+      "During solar storms, account for eclipse shielding, radiation fault state, communication risk, and thermal load."
+    ]
+  },
+  "telemetry_file": {
+    "path": "ready_to_send_telemetry/telemetry_20260504_021438_889443_frame_00000108.json",
+    "created_unix_time_s": 1777860878.889466,
+    "created_utc_iso": "2026-05-04T02:14:38.889467+00:00",
+    "write_mode": "unique_snapshot_file_for_mqtt_outbox",
+    "intended_sample_hz": 10.0,
+    "mqtt_bridge_note": "SMS communication script should publish this file and delete it after sending."
+  }
+}
