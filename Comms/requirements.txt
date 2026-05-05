@@ -1,0 +1,7 @@
+vpython
+numpy
+pandas
+pyarrow
+paho-mqtt
+watchdog
+requests
