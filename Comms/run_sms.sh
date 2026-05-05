@@ -1,201 +1,108 @@
 #!/usr/bin/env bash
-# ============================================================
-# run_sms.sh
-# SMS / simulation-side one-command launcher.
-#
-# Put this file directly inside the shared comms/ folder.
-#
-# Usage:
-#   cd ~/comms
-#   chmod +x run_sms.sh
-#   ./run_sms.sh
-#
-# Optional:
-#   ./run_sms.sh 192.168.1.50
-#   ./run_sms.sh tcp://192.168.1.50:1883
-# ============================================================
 
-set -euo pipefail
+set -e
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$ROOT_DIR"
+echo "[SMS] Starting SMS setup in: $(pwd)"
 
-LOG_DIR="${ROOT_DIR}/logs"
-VENV_DIR="${ROOT_DIR}/.venv"
-REQ_FILE="${ROOT_DIR}/requirements.txt"
+############################
+# PYTHON ENV SETUP
+############################
 
-mkdir -p "$LOG_DIR"
-mkdir -p ready_to_send_telemetry
-mkdir -p received_transmissions
-mkdir -p training_data
+VENV_DIR=".venv"
 
-log()  { echo "[SMS] $*"; }
-warn() { echo "[SMS][WARN] $*" >&2; }
-die()  { echo "[SMS][ERROR] $*" >&2; exit 1; }
-
-normalize_broker() {
-    local raw="$1"
-
-    if [[ -z "$raw" ]]; then
-        die "Broker IP/address cannot be empty."
-    fi
-
-    if [[ "$raw" == tcp://* ]]; then
-        echo "$raw"
-    elif [[ "$raw" == *:* ]]; then
-        echo "tcp://${raw}"
-    else
-        echo "tcp://${raw}:1883"
-    fi
-}
-
-prompt_broker() {
-    local supplied="${1:-}"
-    local raw=""
-
-    if [[ -n "$supplied" ]]; then
-        raw="$supplied"
-    else
-        echo ""
-        read -r -p "Enter MQTT broker IP/address, e.g. 192.168.1.50: " raw
-    fi
-
-    normalize_broker "$raw"
-}
-
-test_broker() {
-    local broker="$1"
-    local stripped="${broker#tcp://}"
-    local host="${stripped%:*}"
-    local port="${stripped##*:}"
-
-    if command -v nc >/dev/null 2>&1; then
-        log "Testing broker TCP access at ${host}:${port}..."
-
-        if nc -z -w 3 "$host" "$port" >/dev/null 2>&1; then
-            log "Broker port reachable."
-        else
-            warn "Could not reach broker port. Continuing anyway; MQTT may fail if the broker is not running."
-        fi
-    else
-        warn "nc not found; skipping broker reachability check."
-    fi
-}
-
-cleanup() {
-    log "Stopping SMS child processes..."
-
-    if [[ -n "${DISPATCHER_PID:-}" ]]; then
-        kill "$DISPATCHER_PID" >/dev/null 2>&1 || true
-    fi
-}
-
-trap cleanup INT TERM EXIT
-
-log "Starting SMS setup in: $ROOT_DIR"
-
-if [[ ! -f "satellite_orbit.py" ]]; then
-    die "satellite_orbit.py not found in $ROOT_DIR"
+if [ ! -d "$VENV_DIR" ]; then
+    echo "[SMS] Creating virtual environment..."
+    python3 -m venv $VENV_DIR
 fi
 
-if [[ ! -f "build_dispatcher.sh" ]]; then
-    die "build_dispatcher.sh not found in $ROOT_DIR"
+echo "[SMS] Activating virtual environment..."
+source $VENV_DIR/bin/activate
+
+echo "[SMS] Upgrading core Python tooling..."
+pip install --upgrade pip setuptools wheel
+
+if [ ! -f "reqs.txt" ]; then
+    echo "[SMS] ERROR: reqs.txt not found!"
+    exit 1
 fi
 
-if [[ ! -f "dispatcher.cpp" ]]; then
-    die "dispatcher.cpp not found in $ROOT_DIR"
-fi
+echo "[SMS] Installing Python dependencies..."
+pip install -r reqs.txt
 
-log "Checking Python..."
+echo "[SMS] Verifying Python imports..."
+python3 - <<EOF
+import pkg_resources
+import json
+import threading
+print("Core Python packages OK")
 
-if ! command -v python3 >/dev/null 2>&1; then
-    die "python3 not found. Install Python 3 first."
-fi
-
-if [[ ! -d "$VENV_DIR" ]]; then
-    log "Creating Python virtual environment at $VENV_DIR"
-    python3 -m venv "$VENV_DIR"
-else
-    log "Python virtual environment already exists."
-fi
-
-source "${VENV_DIR}/bin/activate"
-
-log "Upgrading pip..."
-python -m pip install --upgrade pip setuptools wheel
-
-if [[ ! -f "$REQ_FILE" ]]; then
-    warn "requirements.txt not found. Creating baseline requirements.txt."
-
-    cat > "$REQ_FILE" <<'EOF'
-vpython
-numpy
-pandas
-pyarrow
-paho-mqtt
-watchdog
-requests
+try:
+    import vpython
+    print("vpython OK")
+except Exception as e:
+    print("WARNING: vpython issue:", e)
 EOF
+
+############################
+# BUILD DISPATCHER
+############################
+
+if ! command -v brew &> /dev/null; then
+    echo "[SMS] ERROR: Homebrew not installed. Install from https://brew.sh/"
+    exit 1
 fi
 
-log "Installing/checking Python packages from requirements.txt..."
-python -m pip install -r "$REQ_FILE"
+echo "[SMS] Installing C++ dependencies..."
+brew install paho-mqtt-c paho-mqtt-cpp nlohmann-json || true
 
-log "Verifying simulation Python imports..."
-
-python - <<'PY'
-import importlib
-
-required = ["vpython", "numpy"]
-missing = []
-
-for pkg in required:
-    try:
-        importlib.import_module(pkg)
-    except Exception as e:
-        missing.append((pkg, str(e)))
-
-if missing:
-    for pkg, err in missing:
-        print(f"Missing/broken package: {pkg}: {err}")
-    raise SystemExit(1)
-
-print("Python simulation imports OK.")
-PY
-
-log "Building/checking dispatcher executable..."
+echo "[SMS] Building dispatcher..."
 chmod +x build_dispatcher.sh
 ./build_dispatcher.sh
 
-if [[ ! -x "./dispatcher" ]]; then
-    die "dispatcher executable was not produced or is not executable."
+if [ ! -f "./dispatcher" ]; then
+    echo "[SMS] ERROR: dispatcher build failed!"
+    exit 1
 fi
 
-BROKER="$(prompt_broker "${1:-}")"
-export MQTT_BROKER="$BROKER"
+############################
+# BROKER INPUT
+############################
 
-log "Using MQTT broker: $BROKER"
-test_broker "$BROKER"
+echo ""
+read -p "[SMS] Enter MQTT broker IP (default: localhost): " BROKER_IP
 
-log "Starting dispatcher in background..."
+if [ -z "$BROKER_IP" ]; then
+    BROKER="tcp://localhost:1883"
+else
+    if [[ "$BROKER_IP" != tcp://* ]]; then
+        BROKER="tcp://$BROKER_IP:1883"
+    else
+        BROKER="$BROKER_IP"
+    fi
+fi
 
-./dispatcher --broker "$BROKER" > "${LOG_DIR}/sms_dispatcher.log" 2>&1 &
+echo "[SMS] Using broker: $BROKER"
+
+############################
+# RUN PROCESSES
+############################
+
+cleanup() {
+    echo "[SMS] Stopping SMS child processes..."
+    pkill -P $$
+}
+trap cleanup EXIT
+
+echo "[SMS] Starting dispatcher..."
+./dispatcher --broker "$BROKER" &
+
 DISPATCHER_PID=$!
 
-sleep 2
+echo "[SMS] Starting simulation..."
+python3 simulation.py &
 
-if ! kill -0 "$DISPATCHER_PID" >/dev/null 2>&1; then
-    warn "Dispatcher exited early. Last dispatcher log lines:"
-    tail -n 80 "${LOG_DIR}/sms_dispatcher.log" || true
-    die "Dispatcher failed to start."
-fi
+SIM_PID=$!
 
-log "Dispatcher PID: $DISPATCHER_PID"
-log "Dispatcher log: ${LOG_DIR}/sms_dispatcher.log"
+echo "[SMS] System running. Press Ctrl+C to exit."
 
-echo ""
-log "Starting satellite_orbit.py in the foreground."
-log "Answer the simulation setup prompts in this terminal."
-echo ""
-
-python satellite_orbit.py
+wait $DISPATCHER_PID $SIM_PID
