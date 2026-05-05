@@ -230,7 +230,10 @@ COMMAND_FILE = None
 COMMAND_CHECK_INTERVAL_FRAMES = None
 EXTERNAL_QUANTUM_COMMANDS_ENABLED = False
 TELEMETRY_OUTPUT_MODE = "mqtt_outbox"
-BASE_TELEMETRY_SAMPLE_HZ = 10.0
+BASE_TELEMETRY_SAMPLE_HZ = 40.0
+# Hybrid telemetry policy: scale output rate with time speed at low speeds,
+# but cap it so MQTT/file I/O does not get flooded at high time zoom.
+MAX_TELEMETRY_SAMPLE_HZ = 40.0
 MQTT_TELEMETRY_OUTPUT_DIR = "ready_to_send_telemetry"
 os.makedirs(MQTT_TELEMETRY_OUTPUT_DIR, exist_ok=True)
 
@@ -910,10 +913,22 @@ simulation_ended = False
 final_summary_printed = False
 simulation_physical_time = 0.0
 frame_count = 0
+SIMULATION_LOCAL_START_UNIX_TIME_S = time.time()
+SIMULATION_LOCAL_START_PERF_COUNTER_S = time.perf_counter()
+SIMULATION_LOCAL_START = datetime.fromtimestamp(SIMULATION_LOCAL_START_UNIX_TIME_S).astimezone()
+SIMULATION_LOCAL_START_ISO_MS = SIMULATION_LOCAL_START.isoformat(timespec="milliseconds")
+
+
+def uncapped_telemetry_sample_hz():
+    return BASE_TELEMETRY_SAMPLE_HZ * simulation_speed_multiplier
 
 
 def effective_telemetry_sample_hz():
-    return BASE_TELEMETRY_SAMPLE_HZ * simulation_speed_multiplier
+    return min(MAX_TELEMETRY_SAMPLE_HZ, uncapped_telemetry_sample_hz())
+
+
+def telemetry_rate_is_capped():
+    return uncapped_telemetry_sample_hz() > MAX_TELEMETRY_SAMPLE_HZ
 
 
 def telemetry_export_interval_frames():
@@ -926,7 +941,8 @@ def set_control_status(text, label_color=color.white):
 
 
 def speed_status_text():
-    return f"speed {simulation_speed_multiplier}x | telemetry {effective_telemetry_sample_hz():.1f} Hz | dt {dt:.1f} s"
+    cap_text = " capped" if telemetry_rate_is_capped() else ""
+    return f"speed {simulation_speed_multiplier}x | telemetry {effective_telemetry_sample_hz():.1f} Hz{cap_text} | dt {dt:.1f} s"
 
 
 def refresh_running_status():
@@ -938,7 +954,8 @@ def set_simulation_speed(multiplier):
     global simulation_speed_multiplier, dt
     simulation_speed_multiplier = multiplier
     dt = BASE_DT * simulation_speed_multiplier
-    print(f"Fast forward set to {simulation_speed_multiplier}x | telemetry {effective_telemetry_sample_hz():.1f} Hz | dt {dt:.1f} s")
+    cap_text = " capped by hybrid MQTT policy" if telemetry_rate_is_capped() else ""
+    print(f"Fast forward set to {simulation_speed_multiplier}x | telemetry {effective_telemetry_sample_hz():.1f} Hz{cap_text} | dt {dt:.1f} s")
     refresh_running_status()
 
 
@@ -3363,18 +3380,67 @@ def build_external_decision_request(satellite_states, passive_rf_detections, rad
     }
 
 
-def build_telemetry_payload(frame_count_value, visual_time_s, physical_time_s, satellites, asteroids, debris_particles):
+def local_time_payload():
+    # Local wall-clock time is recorded in milliseconds because the SDK output
+    # standard is milliseconds. Elapsed time uses perf_counter so it is monotonic
+    # and will not jump if the computer clock is adjusted.
+    now_unix_s = time.time()
+    now_local = datetime.fromtimestamp(now_unix_s).astimezone()
+    elapsed_ms_since_t0 = int(round((time.perf_counter() - SIMULATION_LOCAL_START_PERF_COUNTER_S) * 1000.0))
+    current_local_iso_ms = now_local.isoformat(timespec="milliseconds")
+    t0_local_unix_ms = int(round(SIMULATION_LOCAL_START_UNIX_TIME_S * 1000.0))
+    current_local_unix_ms = int(round(now_unix_s * 1000.0))
+    return {
+        "time_standard": "milliseconds",
+        "t0_local_clock_iso_ms": SIMULATION_LOCAL_START_ISO_MS,
+        "t0_local_unix_time_ms": t0_local_unix_ms,
+        "current_local_clock_iso_ms": current_local_iso_ms,
+        "current_local_unix_time_ms": current_local_unix_ms,
+        "elapsed_ms_since_t0": elapsed_ms_since_t0,
+
+        # Backward-compatible aliases for the previous output version.
+        "local_unix_time_ms": current_local_unix_ms,
+        "local_iso": current_local_iso_ms,
+        "local_timezone": now_local.tzname(),
+        "simulation_local_start_unix_time_ms": t0_local_unix_ms,
+        "simulation_local_start_iso": SIMULATION_LOCAL_START_ISO_MS,
+        "elapsed_local_time_ms_since_sim_start": elapsed_ms_since_t0,
+    }
+
+
+def simulation_time_ms(value_s):
+    return int(round(float(value_s) * 1000.0))
+
+
+def build_full_telemetry_payload(frame_count_value, visual_time_s, physical_time_s, satellites, asteroids, debris_particles):
     active_debris = [d for d in debris_particles if d["active"]]
-    unix_time_s = time.time()
-    timestamp_utc_iso = datetime.fromtimestamp(unix_time_s, tz=timezone.utc).isoformat()
+    local_time = local_time_payload()
+    unix_time_s = local_time["local_unix_time_ms"] / 1000.0
+    timestamp_utc_iso = local_time["local_iso"]
     measurement_timestamp = {
-        "unix_time_s": float(unix_time_s),
-        "utc_iso": timestamp_utc_iso,
-        "simulation_visual_time_s": float(visual_time_s),
-        "simulation_physical_time_s": float(physical_time_s),
+        # Canonical local-time fields for the SDK packet.
+        "time_standard": local_time["time_standard"],
+        "t0_local_clock_iso_ms": local_time["t0_local_clock_iso_ms"],
+        "t0_local_unix_time_ms": local_time["t0_local_unix_time_ms"],
+        "current_local_clock_iso_ms": local_time["current_local_clock_iso_ms"],
+        "current_local_unix_time_ms": local_time["current_local_unix_time_ms"],
+        "elapsed_ms_since_t0": local_time["elapsed_ms_since_t0"],
+
+        # Backward-compatible aliases from the previous output version.
+        "local_unix_time_ms": local_time["local_unix_time_ms"],
+        "local_iso": local_time["local_iso"],
+        "local_timezone": local_time["local_timezone"],
+        "simulation_local_start_unix_time_ms": local_time["simulation_local_start_unix_time_ms"],
+        "simulation_local_start_iso": local_time["simulation_local_start_iso"],
+        "elapsed_local_time_ms_since_sim_start": local_time["elapsed_local_time_ms_since_sim_start"],
+        "simulation_visual_time_ms": simulation_time_ms(visual_time_s),
+        "simulation_physical_time_ms": simulation_time_ms(physical_time_s),
         "frame": int(frame_count_value),
         "sample_hz": float(effective_telemetry_sample_hz()),
         "base_sample_hz": float(BASE_TELEMETRY_SAMPLE_HZ),
+        "uncapped_sample_hz": float(uncapped_telemetry_sample_hz()),
+        "max_sample_hz": float(MAX_TELEMETRY_SAMPLE_HZ),
+        "telemetry_rate_capped": bool(telemetry_rate_is_capped()),
         "speed_multiplier": float(simulation_speed_multiplier),
     }
     passive_rf_detections = build_passive_rf_detections(satellites, asteroids, debris_particles, measurement_timestamp)
@@ -3518,10 +3584,10 @@ def build_telemetry_payload(frame_count_value, visual_time_s, physical_time_s, s
         "schema": "satellite_simulation.telemetry.v2.earth_sun_sensor_fusion",
         "frame": int(frame_count_value),
         "measurement_timestamp": measurement_timestamp,
-        "utc_iso": timestamp_utc_iso,
-        "unix_time_s": float(unix_time_s),
-        "visual_time_s": float(visual_time_s),
-        "physical_time_s": float(physical_time_s),
+        "local_iso": timestamp_utc_iso,
+        "local_unix_time_ms": int(round(unix_time_s * 1000.0)),
+        "visual_time_ms": simulation_time_ms(visual_time_s),
+        "physical_time_ms": simulation_time_ms(physical_time_s),
         "mars_removed": True,
         "dataset_backed_characters": {
             "enabled": bool(SATELLITE_DATASET is not None or DEBRIS_DATASET is not None),
@@ -3645,22 +3711,388 @@ def build_telemetry_payload(frame_count_value, visual_time_s, physical_time_s, s
     }
 
 
+
+# -----------------------------
+# Minimum SDK telemetry output filter
+# -----------------------------
+# This section intentionally changes ONLY the JSON shape written to disk.
+# The simulation still computes the full internal telemetry above so RF, TCAD,
+# radiation, solar/power, thermal, collision, and fragment physics remain unchanged.
+
+def _sdk_get(data, path, default=None):
+    cur = data
+    for part in path.split("."):
+        if not isinstance(cur, dict) or part not in cur:
+            return default
+        cur = cur[part]
+    return cur
+
+
+def _sdk_vec(data, path):
+    v = _sdk_get(data, path, {})
+    if not isinstance(v, dict):
+        v = {}
+    return {
+        "x": v.get("x"),
+        "y": v.get("y"),
+        "z": v.get("z"),
+    }
+
+
+def _sdk_tcad_sensor(tcad, sensor_key, include_lookup_outputs=True):
+    src = tcad.get(sensor_key, {}) if isinstance(tcad, dict) else {}
+    out = {
+        "health_percent": src.get("health_percent"),
+        "noise_accumulated_fraction": src.get("noise_accumulated_fraction"),
+        "bias_drift_accumulated_fraction": src.get("bias_drift_accumulated_fraction"),
+        "seu_probability_per_day": src.get("seu_probability_per_day"),
+        "sensor_confidence": src.get("sensor_confidence"),
+        "trust_level": src.get("trust_level"),
+        "safe_to_use_for_autonomous_control": src.get("safe_to_use_for_autonomous_control"),
+    }
+    if include_lookup_outputs:
+        out["lookup_outputs"] = src.get("lookup_outputs", {}) if isinstance(src.get("lookup_outputs", {}), dict) else {}
+    return out
+
+
+def _sdk_base_entity(obj):
+    return {
+        "id": obj.get("id"),
+        "type": obj.get("type"),
+        "active": bool(obj.get("active", False)),
+        "destroyed": bool(obj.get("destroyed", not bool(obj.get("active", False)))),
+        "position_m_eci": _sdk_vec(obj, "position_m_eci"),
+        "velocity_mps_eci": _sdk_vec(obj, "velocity_mps_eci"),
+        "mass_kg": obj.get("mass_kg"),
+        "physical_radius_m": obj.get("physical_radius_m"),
+        "orbit_class": obj.get("orbit_class"),
+        "central_body": obj.get("central_body"),
+    }
+
+
+def _sdk_rf_detection(d):
+    return {
+        "sensor_id": d.get("sensor_id"),
+        "detected_object_id": d.get("detected_object_id"),
+        "detected_object_type": d.get("detected_object_type"),
+        "estimated_range_m": d.get("estimated_range_m"),
+        "range_uncertainty_m": d.get("range_uncertainty_m"),
+        "bearing_unit_vector": _sdk_vec(d, "bearing_unit_vector"),
+        "estimated_position_m_eci": _sdk_vec(d, "estimated_position_m_eci"),
+        "relative_speed_mps": d.get("relative_speed_mps"),
+        "closing_speed_mps": d.get("closing_speed_mps"),
+        "received_power_dbm": d.get("received_power_dbm"),
+        "snr_db": d.get("snr_db"),
+        "frequency_hz": d.get("frequency_hz"),
+        "doppler_shift_hz": d.get("doppler_shift_hz"),
+        "line_of_sight": d.get("line_of_sight"),
+        "blocking_body": d.get("blocking_body"),
+    }
+
+
+def _sdk_satellite(sat, rf_for_sat):
+    tcad = sat.get("tcad_sensor_degradation", {}) if isinstance(sat.get("tcad_sensor_degradation", {}), dict) else {}
+    base = _sdk_base_entity(sat)
+    base.update({
+        "can_maneuver": sat.get("can_maneuver"),
+        "selected_for_data": sat.get("selected_for_data"),
+        "name": sat.get("name"),
+        "catalog_name": sat.get("catalog_name"),
+        "norad_cat_id": sat.get("norad_cat_id"),
+        "purpose": sat.get("purpose"),
+        "users": sat.get("users"),
+        "operator_owner": sat.get("operator_owner"),
+        "country_of_operator_owner": sat.get("country_of_operator_owner"),
+        "environment_vectors": {
+            "sun_vector_from_object_eci": _sdk_vec(sat, "environment_vectors.sun_vector_from_object_eci"),
+            "earth_vector_from_object_eci": _sdk_vec(sat, "environment_vectors.earth_vector_from_object_eci"),
+            "nadir_vector_eci": _sdk_vec(sat, "environment_vectors.nadir_vector_eci"),
+            "velocity_unit_vector_eci": _sdk_vec(sat, "environment_vectors.velocity_unit_vector_eci"),
+            "solar_irradiance_w_m2": _sdk_get(sat, "environment_vectors.solar_irradiance_w_m2"),
+        },
+        "sunlight_state": {
+            "in_sunlight": _sdk_get(sat, "sunlight_state.in_sunlight"),
+            "in_eclipse": _sdk_get(sat, "sunlight_state.in_eclipse"),
+            "eclipse_body": _sdk_get(sat, "sunlight_state.eclipse_body"),
+            "sun_exposure_factor": _sdk_get(sat, "sunlight_state.sun_exposure_factor"),
+        },
+        "attitude_state": {
+            "roll_deg": _sdk_get(sat, "attitude_state.roll_deg"),
+            "pitch_deg": _sdk_get(sat, "attitude_state.pitch_deg"),
+            "yaw_deg": _sdk_get(sat, "attitude_state.yaw_deg"),
+            "panel_rotation_deg": _sdk_get(sat, "attitude_state.panel_rotation_deg"),
+            "angular_rate_dps": _sdk_get(sat, "attitude_state.angular_rate_dps", {"x": None, "y": None, "z": None}),
+            "panel_normal_eci": _sdk_vec(sat, "attitude_state.panel_normal_eci"),
+            "antenna_normal_eci": _sdk_vec(sat, "attitude_state.antenna_normal_eci"),
+            "sensor_confidence": _sdk_get(sat, "attitude_state.sensor_confidence"),
+        },
+        "camera_sensor": {
+            "enabled": _sdk_get(sat, "camera_sensor.enabled"),
+            "sensor_type": _sdk_get(sat, "camera_sensor.sensor_type"),
+            "image_noise_fraction": _sdk_get(sat, "camera_sensor.image_noise_fraction"),
+            "hot_pixel_fraction": _sdk_get(sat, "camera_sensor.hot_pixel_fraction"),
+            "dead_pixel_fraction": _sdk_get(sat, "camera_sensor.dead_pixel_fraction"),
+            "dark_current_factor": _sdk_get(sat, "camera_sensor.dark_current_factor"),
+            "frame_corruption_probability": _sdk_get(sat, "camera_sensor.frame_corruption_probability"),
+            "camera_health_percent": _sdk_get(sat, "camera_sensor.camera_health_percent"),
+            "sensor_confidence": _sdk_get(sat, "camera_sensor.sensor_confidence"),
+            "radiation_degraded": _sdk_get(sat, "camera_sensor.radiation_degraded"),
+            "minimum_useful_health_percent": _sdk_get(sat, "camera_sensor.minimum_useful_health_percent"),
+        },
+        "imaging_target_geometry": {
+            "target_name": _sdk_get(sat, "imaging_target_geometry.target_name"),
+            "target_position_m_eci": _sdk_vec(sat, "imaging_target_geometry.target_position_m_eci"),
+            "satellite_to_target_vector_eci": _sdk_vec(sat, "imaging_target_geometry.satellite_to_target_vector_eci"),
+            "slant_range_to_target_m": _sdk_get(sat, "imaging_target_geometry.slant_range_to_target_m"),
+            "off_nadir_angle_deg": _sdk_get(sat, "imaging_target_geometry.off_nadir_angle_deg"),
+            "camera_half_angle_deg": _sdk_get(sat, "imaging_target_geometry.camera_half_angle_deg"),
+            "horizon_visible": _sdk_get(sat, "imaging_target_geometry.horizon_visible"),
+            "within_camera_cone": _sdk_get(sat, "imaging_target_geometry.within_camera_cone"),
+        },
+        "passive_rf_detections": [_sdk_rf_detection(d) for d in rf_for_sat],
+        "solar_panel_system": {
+            "sun_vector_eci": _sdk_vec(sat, "solar_panel_system.sun_vector_eci"),
+            "panel_normal_eci": _sdk_vec(sat, "solar_panel_system.panel_normal_eci"),
+            "panel_area_m2": _sdk_get(sat, "solar_panel_system.panel_area_m2"),
+            "panel_efficiency": _sdk_get(sat, "solar_panel_system.panel_efficiency"),
+            "max_solar_generation_w": _sdk_get(sat, "solar_panel_system.max_solar_generation_w"),
+            "panel_rotation_rate_limit_deg_per_s": _sdk_get(sat, "solar_panel_system.panel_rotation_rate_limit_deg_per_s"),
+            "sensor_confidence": _sdk_get(sat, "solar_panel_system.sensor_confidence"),
+        },
+        "power_system": {
+            "battery_percent": _sdk_get(sat, "power_system.battery_percent"),
+            "battery_capacity_wh": _sdk_get(sat, "power_system.battery_capacity_wh"),
+            "solar_generation_w": _sdk_get(sat, "power_system.solar_generation_w"),
+            "load_w": _sdk_get(sat, "power_system.load_w"),
+            "base_load_w": _sdk_get(sat, "power_system.base_load_w"),
+            "rf_payload_load_w": _sdk_get(sat, "power_system.rf_payload_load_w"),
+            "radiation_fault_load_w": _sdk_get(sat, "power_system.radiation_fault_load_w"),
+            "sensor_confidence": _sdk_get(sat, "power_system.sensor_confidence"),
+        },
+        "voltage_sensors": {
+            "solar_panel_voltage_v": _sdk_get(sat, "voltage_sensors.solar_panel_voltage_v"),
+            "solar_panel_current_a": _sdk_get(sat, "voltage_sensors.solar_panel_current_a"),
+            "battery_voltage_v": _sdk_get(sat, "voltage_sensors.battery_voltage_v"),
+            "bus_voltage_v": _sdk_get(sat, "voltage_sensors.bus_voltage_v"),
+            "bus_current_draw_a": _sdk_get(sat, "voltage_sensors.bus_current_draw_a"),
+            "net_charge_current_a": _sdk_get(sat, "voltage_sensors.net_charge_current_a"),
+            "sensor_confidence": _sdk_get(sat, "voltage_sensors.sensor_confidence"),
+        },
+        "communication_link": {
+            "link_available": _sdk_get(sat, "communication_link.link_available"),
+            "link_snr_db": _sdk_get(sat, "communication_link.link_snr_db"),
+            "packet_loss_probability": _sdk_get(sat, "communication_link.packet_loss_probability"),
+            "latency_ms": _sdk_get(sat, "communication_link.latency_ms"),
+            "rf_blackout_probability": _sdk_get(sat, "communication_link.rf_blackout_probability"),
+            "antenna_pointing_factor": _sdk_get(sat, "communication_link.antenna_pointing_factor"),
+            "sensor_confidence": _sdk_get(sat, "communication_link.sensor_confidence"),
+        },
+        "thermal_profile": {
+            "bus_temperature_c": _sdk_get(sat, "thermal_profile.bus_temperature_c"),
+            "battery_temperature_c": _sdk_get(sat, "thermal_profile.battery_temperature_c"),
+            "processor_temperature_c": _sdk_get(sat, "thermal_profile.processor_temperature_c"),
+            "power_amp_temperature_c": _sdk_get(sat, "thermal_profile.power_amp_temperature_c"),
+            "temperature_sensor_noise_c": _sdk_get(sat, "thermal_profile.temperature_sensor_noise_c"),
+            "sensor_confidence": _sdk_get(sat, "thermal_profile.sensor_confidence"),
+        },
+        "radiation": {
+            "radiation_region": _sdk_get(sat, "radiation.radiation_region"),
+            "shielding_mm_aluminum": _sdk_get(sat, "radiation.shielding_mm_aluminum"),
+            "shielding_factor": _sdk_get(sat, "radiation.shielding_factor"),
+            "dose_rate_msv_per_day": _sdk_get(sat, "radiation.dose_rate_msv_per_day"),
+            "particle_flux_pfu": _sdk_get(sat, "radiation.particle_flux_pfu"),
+            "particle_flux_pfu_gt_10mev": _sdk_get(sat, "radiation.particle_flux_pfu_gt_10mev"),
+            "single_event_upset_probability_per_day": _sdk_get(sat, "radiation.single_event_upset_probability_per_day"),
+            "solar_panel_degradation_fraction_per_day": _sdk_get(sat, "radiation.solar_panel_degradation_fraction_per_day"),
+            "communications_blackout_probability": _sdk_get(sat, "radiation.communications_blackout_probability"),
+            "cumulative_estimated_dose_msv": _sdk_get(sat, "radiation.cumulative_estimated_dose_msv"),
+            "electronics_health_percent": _sdk_get(sat, "radiation.electronics_health_percent"),
+            "flags": {
+                "solar_storm_active": _sdk_get(sat, "radiation.flags.solar_storm_active"),
+                "sunlit_side": _sdk_get(sat, "radiation.flags.sunlit_side"),
+                "earth_shadow_shielded": _sdk_get(sat, "radiation.flags.earth_shadow_shielded"),
+            },
+        },
+        "tcad_sensor_degradation": {
+            "attitude_state": _sdk_tcad_sensor(tcad, "attitude_state"),
+            "camera_sensor": _sdk_tcad_sensor(tcad, "camera_sensor"),
+            "passive_rf": _sdk_tcad_sensor(tcad, "passive_rf"),
+            "solar_panel_system": {
+                "sensor_confidence": _sdk_get(tcad, "solar_panel_system.sensor_confidence"),
+                "safe_to_use_for_autonomous_control": _sdk_get(tcad, "solar_panel_system.safe_to_use_for_autonomous_control"),
+            },
+            "voltage_sensors": {
+                "sensor_confidence": _sdk_get(tcad, "voltage_sensors.sensor_confidence"),
+                "safe_to_use_for_autonomous_control": _sdk_get(tcad, "voltage_sensors.safe_to_use_for_autonomous_control"),
+            },
+            "communication_link": _sdk_tcad_sensor(tcad, "communication_link"),
+            "thermal_profile": _sdk_tcad_sensor(tcad, "thermal_profile", include_lookup_outputs=False),
+            "command_decoder": _sdk_tcad_sensor(tcad, "command_decoder"),
+            "onboard_processor": _sdk_tcad_sensor(tcad, "onboard_processor"),
+        },
+    })
+    return base
+
+
+def _sdk_asteroid(obj):
+    out = _sdk_base_entity(obj)
+    out.update({
+        "name": obj.get("name"),
+        "catalog_name": obj.get("catalog_name"),
+    })
+    return out
+
+
+def _sdk_catalog_debris_hazard(obj):
+    out = _sdk_asteroid(obj)
+    out.update({
+        "norad_cat_id": obj.get("norad_cat_id"),
+        "mass_source": obj.get("mass_source"),
+        "mass_confidence": obj.get("mass_confidence"),
+    })
+    return out
+
+
+def _sdk_debris(obj):
+    return {
+        "id": obj.get("id"),
+        "type": obj.get("type"),
+        "active": bool(obj.get("active", False)),
+        "destroyed": bool(obj.get("destroyed", not bool(obj.get("active", False)))),
+        "position_m_eci": _sdk_vec(obj, "position_m_eci"),
+        "velocity_mps_eci": _sdk_vec(obj, "velocity_mps_eci"),
+        "mass_kg": obj.get("mass_kg"),
+        "physical_radius_m": obj.get("physical_radius_m"),
+    }
+
+
+def _sdk_generated_fragment(obj):
+    out = _sdk_debris(obj)
+    out.update({
+        "generated_fragment_boolean": bool(obj.get("generated_fragment", False)),
+        "fragment_event_id": obj.get("fragment_event_id"),
+        "fragment_sequence_number": obj.get("fragment_sequence_number"),
+        "parent_object_ids": obj.get("parent_object_ids"),
+        "created_at_frame": obj.get("created_at_frame"),
+        "created_at_physical_time_ms": None if obj.get("created_at_physical_time_s") is None else simulation_time_ms(obj.get("created_at_physical_time_s")),
+    })
+    return out
+
+
+def _sdk_hazard(obj):
+    return {
+        "id": obj.get("id"),
+        "type": obj.get("type"),
+        "active": bool(obj.get("active", False)),
+        "destroyed": bool(obj.get("destroyed", not bool(obj.get("active", False)))),
+        "position_m_eci": _sdk_vec(obj, "position_m_eci"),
+        "velocity_mps_eci": _sdk_vec(obj, "velocity_mps_eci"),
+        "mass_kg": obj.get("mass_kg"),
+        "physical_radius_m": obj.get("physical_radius_m"),
+        "generated_fragment_boolean": bool(obj.get("generated_fragment", False)),
+        "fragment_event_id": obj.get("fragment_event_id"),
+        "fragment_sequence_number": obj.get("fragment_sequence_number"),
+        "parent_object_ids": obj.get("parent_object_ids"),
+    }
+
+
+def _sdk_collision_event(event, fragment_ids_by_event, object_type_by_id):
+    parent_ids = event.get("parent_object_ids") or event.get("object_ids") or []
+    generated_fragment_ids = fragment_ids_by_event.get(event.get("event_id"), [])
+    return {
+        "event_id": event.get("event_id"),
+        "event_type": event.get("event_type"),
+        "frame": event.get("created_at_frame"),
+        "physical_time_ms": None if event.get("created_at_physical_time_s") is None else simulation_time_ms(event.get("created_at_physical_time_s")),
+        "parent_object_ids": parent_ids,
+        "parent_object_types": [object_type_by_id.get(pid, "unknown") for pid in parent_ids],
+        "generated_fragment_ids": generated_fragment_ids,
+        "generated_fragment_count": event.get("generated_fragment_count", len(generated_fragment_ids)),
+        "total_parent_mass_kg": event.get("total_parent_mass_kg"),
+        "total_fragment_mass_kg": event.get("generated_fragment_mass_sum_kg"),
+        "mass_conservation_error_kg": event.get("mass_conservation_error_kg"),
+    }
+
+
+def build_telemetry_payload(frame_count_value, visual_time_s, physical_time_s, satellites, asteroids, debris_particles):
+    full = build_full_telemetry_payload(frame_count_value, visual_time_s, physical_time_s, satellites, asteroids, debris_particles)
+
+    all_rf = full.get("passive_rf_detections", [])
+    rf_by_sensor = {}
+    for detection in all_rf:
+        rf_by_sensor.setdefault(detection.get("sensor_id"), []).append(detection)
+
+    full_satellites = full.get("satellites", [])
+    full_asteroids = full.get("asteroids", [])
+    full_debris = full.get("debris", [])
+
+    satellites_out = [_sdk_satellite(sat, rf_by_sensor.get(sat.get("id"), rf_by_sensor.get(sat.get("name"), []))) for sat in full_satellites]
+
+    catalog_debris_hazards_full = [obj for obj in full_asteroids if obj.get("dataset_backed_debris_hazard") or obj.get("type") == "debris"]
+    asteroids_full = [obj for obj in full_asteroids if obj not in catalog_debris_hazards_full]
+    asteroids_out = [_sdk_asteroid(obj) for obj in asteroids_full]
+    catalog_debris_hazards_out = [_sdk_catalog_debris_hazard(obj) for obj in catalog_debris_hazards_full]
+
+    debris_out = [_sdk_debris(obj) for obj in full_debris]
+    generated_fragments_out = [_sdk_generated_fragment(obj) for obj in full_debris if obj.get("generated_fragment")]
+    hazards_out = [_sdk_hazard(obj) for obj in (full_asteroids + full_debris)]
+
+    object_type_by_id = {}
+    for obj in satellites_out + asteroids_out + catalog_debris_hazards_out + debris_out + generated_fragments_out:
+        if obj.get("id") is not None:
+            object_type_by_id[obj["id"]] = obj.get("type")
+    fragment_ids_by_event = {}
+    for frag in generated_fragments_out:
+        if frag.get("fragment_event_id"):
+            fragment_ids_by_event.setdefault(frag["fragment_event_id"], []).append(frag.get("id"))
+
+    return {
+        "packet": {
+            "frame": int(frame_count_value),
+            "universe_time_ms": simulation_time_ms(physical_time_s),
+            "sample_hz": float(effective_telemetry_sample_hz()),
+            "time_standard": full.get("measurement_timestamp", {}).get("time_standard", "milliseconds"),
+
+            # T0: local computer clock at program initialization.
+            # Example shape: 2026-05-05T12:45:30.123-05:00
+            "t0_local_clock_iso_ms": full.get("measurement_timestamp", {}).get("t0_local_clock_iso_ms"),
+            "t0_local_unix_time_ms": full.get("measurement_timestamp", {}).get("t0_local_unix_time_ms"),
+
+            # Current local computer clock at the exact telemetry sample/write.
+            "current_local_clock_iso_ms": full.get("measurement_timestamp", {}).get("current_local_clock_iso_ms"),
+            "current_local_unix_time_ms": full.get("measurement_timestamp", {}).get("current_local_unix_time_ms"),
+
+            # Monotonic counter since T0, in the same time standard as the output.
+            "elapsed_ms_since_t0": full.get("measurement_timestamp", {}).get("elapsed_ms_since_t0"),
+
+            # Backward-compatible aliases from the previous version.
+            "local_unix_time_ms": full.get("local_unix_time_ms"),
+            "local_iso": full.get("local_iso"),
+            "local_timezone": full.get("measurement_timestamp", {}).get("local_timezone"),
+            "simulation_local_start_unix_time_ms": full.get("measurement_timestamp", {}).get("simulation_local_start_unix_time_ms"),
+            "simulation_local_start_iso": full.get("measurement_timestamp", {}).get("simulation_local_start_iso"),
+            "elapsed_local_time_ms_since_sim_start": full.get("measurement_timestamp", {}).get("elapsed_local_time_ms_since_sim_start"),
+        },
+        "satellites": satellites_out,
+        "asteroids": asteroids_out,
+        "catalog_debris_hazards": catalog_debris_hazards_out,
+        "debris": debris_out,
+        "generated_fragments": generated_fragments_out,
+        "hazards": hazards_out,
+        "recent_collision_events": [
+            _sdk_collision_event(event, fragment_ids_by_event, object_type_by_id)
+            for event in full.get("recent_collision_events", [])
+        ],
+    }
+
 def write_telemetry_snapshot_for_mqtt(payload):
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
-    filename = f"telemetry_{timestamp}_frame_{payload['frame']:08d}.json"
+    timestamp = datetime.now().astimezone().strftime("%Y%m%d_%H%M%S_%f_local")
+    frame_number = int(payload.get("packet", {}).get("frame", 0))
+    filename = f"telemetry_{timestamp}_frame_{frame_number:08d}.json"
     final_path = os.path.join(MQTT_TELEMETRY_OUTPUT_DIR, filename)
     temp_path = final_path + ".tmp"
-    outbox_payload = dict(payload)
-    outbox_payload["telemetry_file"] = {
-        "path": final_path,
-        "created_unix_time_s": float(time.time()),
-        "created_utc_iso": datetime.now(timezone.utc).isoformat(),
-        "write_mode": "unique_snapshot_file_for_mqtt_outbox",
-        "intended_sample_hz": float(effective_telemetry_sample_hz()),
-        "mqtt_bridge_note": "SMS communication script should publish this file and delete it after sending.",
-    }
     with open(temp_path, "w") as f:
-        json.dump(outbox_payload, f, indent=2)
+        json.dump(payload, f, indent=2)
         f.write("\n")
     os.replace(temp_path, final_path)
     try:
@@ -3682,13 +4114,16 @@ def write_live_telemetry_json(payload):
 
 def export_telemetry(frame_count_value, visual_time_s, physical_time_s, satellites, asteroids, debris_particles):
     payload = build_telemetry_payload(frame_count_value, visual_time_s, physical_time_s, satellites, asteroids, debris_particles)
-    update_rf_sensor_visual_highlights(payload.get("passive_rf_detections", []))
+    rf_for_visuals = []
+    for sat_payload in payload.get("satellites", []):
+        rf_for_visuals.extend(sat_payload.get("passive_rf_detections", []))
+    update_rf_sensor_visual_highlights(rf_for_visuals)
     try:
         update_dashboard_text(
-            payload.get("visual_time_s", visual_time_s),
-            payload.get("physical_time_s", physical_time_s),
-            payload.get("counts", {}).get("passive_rf_detections", 0),
-            payload.get("counts", {}).get("solar_storm_active", False),
+            visual_time_s,
+            physical_time_s,
+            len(rf_for_visuals),
+            any(_sdk_get(sat_payload, "radiation.flags.solar_storm_active", False) for sat_payload in payload.get("satellites", [])),
         )
     except Exception:
         pass
@@ -3696,9 +4131,10 @@ def export_telemetry(frame_count_value, visual_time_s, physical_time_s, satellit
         try:
             output_path = write_telemetry_snapshot_for_mqtt(payload)
             telemetry_label.text = (
-                f"Telemetry outbox: {effective_telemetry_sample_hz():.1f} Hz | speed {simulation_speed_multiplier}x | "
-                f"{payload['counts']['active_satellites']} sats, {payload['counts']['active_asteroids']} asteroids, "
-                f"{payload['counts']['active_debris']} debris | RF {payload['counts'].get('passive_rf_detections', 0)} | frame {payload['frame']}"
+                f"Telemetry outbox: {effective_telemetry_sample_hz():.1f} Hz{' capped' if telemetry_rate_is_capped() else ''} | speed {simulation_speed_multiplier}x | "
+                f"{len(payload.get('satellites', []))} sats, {len(payload.get('asteroids', []))} asteroids, "
+                f"{len(payload.get('debris', []))} debris | RF {sum(len(s.get('passive_rf_detections', [])) for s in payload.get('satellites', []))} | "
+                f"frame {payload.get('packet', {}).get('frame', 0)}"
             )
             telemetry_label.color = color.white
             # Intentionally quiet: telemetry files are written without spamming the terminal.
@@ -4144,7 +4580,7 @@ def active_satellite_count():
 
 
 print("Telemetry output mode:", TELEMETRY_OUTPUT_MODE)
-print(f"Telemetry snapshots will be queued in '{MQTT_TELEMETRY_OUTPUT_DIR}' at {effective_telemetry_sample_hz():.1f} Hz.")
+print(f"Telemetry snapshots will be queued in '{MQTT_TELEMETRY_OUTPUT_DIR}' at {effective_telemetry_sample_hz():.1f} Hz, capped at {MAX_TELEMETRY_SAMPLE_HZ:.1f} Hz by hybrid MQTT policy.")
 initialize_tcad_lookup_runtime()
 
 # Initial telemetry snapshot
