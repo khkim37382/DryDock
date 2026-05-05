@@ -5,3 +5,4 @@ tcad/output/tcad_generation_log.json
 ready_to_send_telemetry/
 *.tmp
 
+.DS_Store
